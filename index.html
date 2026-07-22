@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Тренажёр прописывания иероглифов</title>
+    <title>Тренажёр прописывания иероглифов — Избранное</title>
     <style>
         :root {
             --bg: #f5f0eb;
             --card-bg: #fffef9;
             --text: #2c2416;
-            --accent: #2c7a47;
+            --accent: #c44536;
+            --accent-hover: #a6362a;
             --border: #d9cfc0;
             --shadow: 0 4px 20px rgba(0,0,0,0.08);
         }
@@ -19,61 +20,79 @@
             background: var(--bg);
             min-height: 100vh;
             display: flex; flex-direction: column; align-items: center;
-            padding: 20px 16px 40px;
+            padding: 16px 12px 30px;
             touch-action: manipulation;
         }
-        header { text-align: center; margin-bottom: 16px; }
+        header { text-align: center; margin-bottom: 10px; }
         header h1 { font-size: 1.8rem; color: var(--text); }
         .subtitle { font-size: 0.9rem; color: #5c5347; }
-        .prompt {
-            background: var(--card-bg); border-radius: 20px; padding: 16px 24px;
-            box-shadow: var(--shadow); margin-bottom: 16px; text-align: center;
-            width: 100%; max-width: 360px;
+
+        .mode-switch { display:flex; gap:10px; margin-bottom:12px; }
+        .mode-btn {
+            background: #fff; border:1.5px solid var(--border); border-radius:24px;
+            padding:8px 20px; font-size:0.9rem; font-weight:600; cursor:pointer;
+            transition: all 0.2s; color: var(--text);
         }
-        .prompt .pinyin { font-size: 1.8rem; font-weight: 600; color: #c44536; }
-        .prompt .translation { font-size: 1.2rem; color: #3d3226; margin-top: 4px; }
+        .mode-btn.active { background: var(--accent); color:#fff; border-color:var(--accent); }
+
+        .prompt {
+            background: var(--card-bg); border-radius: 20px; padding: 14px 20px;
+            box-shadow: var(--shadow); margin-bottom: 12px; text-align: center;
+            width: 100%; max-width: 450px;
+        }
+        .prompt .pinyin { font-size: 1.7rem; font-weight: 600; color: #c44536; }
+        .prompt .translation { font-size: 1.1rem; color: #3d3226; margin-top: 2px; }
+
         .canvas-container {
-            background: #fff; border-radius: 20px; box-shadow: var(--shadow);
-            width: 340px; height: 340px; max-width: 90vw; max-height: 90vw;
-            position: relative; margin-bottom: 12px;
+            background: #fff; border-radius: 24px; box-shadow: var(--shadow);
+            width: 100%; max-width: 450px;
+            aspect-ratio: 1 / 1;
+            position: relative; margin-bottom: 10px;
         }
         canvas {
-            display: block; width: 100%; height: 100%; border-radius: 20px;
+            display: block; width: 100%; height: 100%; border-radius: 24px;
             background: #fffef5; cursor: crosshair;
         }
         .answer-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; align-items: center; justify-content: center;
             pointer-events: none;
-            font-size: 10rem; font-weight: 700; color: rgba(44,122,71,0.35);
-            border-radius: 20px; user-select: none;
+            font-weight: 700; color: rgba(44,122,71,0.3);
+            border-radius: 24px; user-select: none;
+            font-size: clamp(4rem, 20vw, 14rem);
         }
+        .favorite-btn {
+            position: absolute; top: 12px; right: 16px; font-size: 2.2rem;
+            cursor: pointer; color: #d4a574; transition: 0.2s; z-index: 10;
+            background: rgba(255,255,255,0.7); border-radius: 50%; width: 48px;
+            height: 48px; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .favorite-btn.active { color: #c44536; }
+
         .controls {
             display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
-            margin: 8px 0;
+            margin: 6px 0;
         }
         .btn {
-            padding: 10px 22px; border-radius: 28px; border: 1.5px solid var(--border);
+            padding: 10px 20px; border-radius: 28px; border: 1.5px solid var(--border);
             background: #fff; font-size: 0.95rem; font-weight: 600; cursor: pointer;
             transition: 0.2s; color: var(--text); font-family: inherit;
         }
         .btn:hover { background: #f7f3eb; }
-        .btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .btn.accent { background: #2c7a47; color: #fff; border-color: #2c7a47; }
         .btn.accent:hover { background: #1f5e36; }
         .nav-row {
             display: flex; align-items: center; gap: 16px; justify-content: center;
-            margin-top: 8px;
+            margin-top: 6px;
         }
         .counter { font-size: 0.9rem; color: #5c5347; min-width: 60px; text-align: center; }
         .progress-bar {
             width: 260px; max-width: 70%; height: 6px; background: #e0d6c8;
-            border-radius: 10px; margin: 8px 0; overflow: hidden;
+            border-radius: 10px; margin: 6px 0; overflow: hidden;
         }
-        .progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
-        @media (max-width: 500px) {
-            .canvas-container { width: 300px; height: 300px; }
-            .answer-overlay { font-size: 7rem; }
-        }
+        .progress-fill { height: 100%; background: #2c7a47; transition: width 0.3s; }
+        .empty-msg { font-size: 1.5rem; color: #b0a090; text-align: center; padding: 40px 20px; }
     </style>
 </head>
 <body>
@@ -81,6 +100,11 @@
         <h1>✍️ Прописи иероглифов</h1>
         <p class="subtitle">Рисуйте иероглиф, затем покажите образец</p>
     </header>
+
+    <div class="mode-switch">
+        <button class="mode-btn active" data-mode="all">Все слова</button>
+        <button class="mode-btn" data-mode="favorites">⭐ Избранное</button>
+    </div>
 
     <div class="prompt" id="promptBox">
         <div class="pinyin" id="pinyinHint"></div>
@@ -90,6 +114,7 @@
     <div class="canvas-container" id="canvasContainer">
         <canvas id="drawCanvas"></canvas>
         <div class="answer-overlay" id="answerOverlay" style="display:none;"></div>
+        <div class="favorite-btn" id="favoriteBtn">☆</div>
     </div>
 
     <div class="progress-bar">
@@ -109,8 +134,8 @@
 
     <script>
         (function() {
-            // Ваш список слов для повторения (без повторов)
-            const words = [
+            // Полный список слов
+            const allWords = [
                 ["不客气","bú kè qi","пожалуйста"],["留学生","liú xué shēng","иностранный студент"],
                 ["介绍","jiè shào","представлять"],["一下儿","yī xiàr","немного"],
                 ["词典","cí diǎn","словарь"],["就是","jiù shì","именно"],
@@ -238,8 +263,10 @@
                 ["短信","duǎn xìn","сообщение"],["眼睛","yǎn jing","глаза"]
             ];
 
+            // Избранное (из localStorage)
+            let favorites = JSON.parse(localStorage.getItem('strokeFavorites') || '[]');
+            let currentMode = 'all'; // 'all' или 'favorites'
             let currentIndex = 0;
-            const total = words.length;
 
             const canvas = document.getElementById('drawCanvas');
             const ctx = canvas.getContext('2d');
@@ -249,16 +276,26 @@
             const transHint = document.getElementById('transHint');
             const counter = document.getElementById('counter');
             const progressFill = document.getElementById('progressFill');
+            const favoriteBtn = document.getElementById('favoriteBtn');
+            const promptBox = document.getElementById('promptBox');
 
             let drawing = false;
             let lastX, lastY;
+
+            function getCurrentList() {
+                return currentMode === 'all' ? allWords : favorites;
+            }
+
+            function getCurrentWord() {
+                const list = getCurrentList();
+                return list[currentIndex] || null;
+            }
 
             function resizeCanvas() {
                 const rect = container.getBoundingClientRect();
                 canvas.width = rect.width;
                 canvas.height = rect.height;
                 clearCanvas();
-                answerOverlay.style.fontSize = (rect.width * 0.35) + 'px';
             }
 
             function clearCanvas() {
@@ -267,20 +304,94 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
-            function loadWord(index) {
-                if (index < 0) index = total - 1;
-                if (index >= total) index = 0;
+            function updateFavoriteButton() {
+                const word = getCurrentWord();
+                if (!word) {
+                    favoriteBtn.style.display = 'none';
+                    return;
+                }
+                favoriteBtn.style.display = 'flex';
+                const isFav = favorites.some(w => w[0] === word[0]);
+                favoriteBtn.textContent = isFav ? '★' : '☆';
+                favoriteBtn.classList.toggle('active', isFav);
+            }
+
+            function renderWord(index) {
+                const list = getCurrentList();
+                if (list.length === 0) {
+                    pinyinHint.textContent = '';
+                    transHint.textContent = 'Список пуст';
+                    answerOverlay.style.display = 'none';
+                    clearCanvas();
+                    counter.textContent = `0 / 0`;
+                    progressFill.style.width = '0%';
+                    favoriteBtn.style.display = 'none';
+                    return;
+                }
+                if (index < 0) index = list.length - 1;
+                if (index >= list.length) index = 0;
                 currentIndex = index;
-                const [hanzi, pinyin, trans] = words[currentIndex];
+                const [hanzi, pinyin, trans] = list[currentIndex];
                 pinyinHint.textContent = pinyin;
                 transHint.textContent = trans;
                 answerOverlay.style.display = 'none';
                 answerOverlay.textContent = hanzi;
                 clearCanvas();
-                counter.textContent = `${currentIndex+1} / ${total}`;
-                progressFill.style.width = ((currentIndex+1)/total*100) + '%';
+                counter.textContent = `${currentIndex+1} / ${list.length}`;
+                progressFill.style.width = ((currentIndex+1)/list.length*100) + '%';
+                updateFavoriteButton();
             }
 
+            function loadWord(index) {
+                const list = getCurrentList();
+                if (list.length === 0) {
+                    renderWord(0);
+                    return;
+                }
+                if (index < 0) index = list.length - 1;
+                if (index >= list.length) index = 0;
+                renderWord(index);
+            }
+
+            // Переключение режима
+            function switchMode(mode) {
+                if (mode === currentMode) return;
+                currentMode = mode;
+                document.querySelectorAll('.mode-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.mode === mode);
+                });
+                currentIndex = 0;
+                renderWord(0);
+            }
+
+            // Добавление/удаление из избранного
+            function toggleFavorite() {
+                const word = getCurrentWord();
+                if (!word) return;
+                const idx = favorites.findIndex(w => w[0] === word[0]);
+                if (idx === -1) {
+                    favorites.push([...word]);
+                } else {
+                    favorites.splice(idx, 1);
+                }
+                localStorage.setItem('strokeFavorites', JSON.stringify(favorites));
+                updateFavoriteButton();
+
+                // Если мы в режиме избранного и удалили текущее слово
+                if (currentMode === 'favorites') {
+                    if (favorites.length === 0) {
+                        currentIndex = 0;
+                        renderWord(0);
+                    } else {
+                        if (currentIndex >= favorites.length) {
+                            currentIndex = favorites.length - 1;
+                        }
+                        renderWord(currentIndex);
+                    }
+                }
+            }
+
+            // Рисование
             function startDrawing(e) {
                 drawing = true;
                 const pos = getCanvasPos(e);
@@ -292,7 +403,7 @@
                 if (!drawing) return;
                 e.preventDefault();
                 const pos = getCanvasPos(e);
-                ctx.lineWidth = 12;
+                ctx.lineWidth = 14;
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
                 ctx.strokeStyle = '#2c2416';
@@ -324,36 +435,36 @@
                 };
             }
 
-            // Mouse Events
+            // Обработчики событий
             canvas.addEventListener('mousedown', startDrawing);
             canvas.addEventListener('mousemove', draw);
             canvas.addEventListener('mouseup', stopDrawing);
             canvas.addEventListener('mouseleave', stopDrawing);
-
-            // Touch Events
             canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e); });
             canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
             canvas.addEventListener('touchend', stopDrawing);
-
             window.addEventListener('resize', resizeCanvas);
 
             document.getElementById('clearBtn').addEventListener('click', clearCanvas);
             document.getElementById('showAnswerBtn').addEventListener('click', () => {
                 answerOverlay.style.display = 'flex';
             });
-            document.getElementById('nextBtn').addEventListener('click', () => {
-                loadWord(currentIndex + 1);
+            document.getElementById('nextBtn').addEventListener('click', () => loadWord(currentIndex + 1));
+            document.getElementById('prevBtn').addEventListener('click', () => loadWord(currentIndex - 1));
+            document.getElementById('skipBtn').addEventListener('click', () => loadWord(currentIndex + 1));
+
+            favoriteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleFavorite();
             });
-            document.getElementById('prevBtn').addEventListener('click', () => {
-                loadWord(currentIndex - 1);
-            });
-            document.getElementById('skipBtn').addEventListener('click', () => {
-                loadWord(currentIndex + 1);
+
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => switchMode(btn.dataset.mode));
             });
 
             // Инициализация
             resizeCanvas();
-            loadWord(0);
+            renderWord(0);
         })();
     </script>
 </body>
