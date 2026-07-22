@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Китайские карточки — Избранное со списком</title>
+    <title>Китайские карточки — Избранное + игра</title>
     <style>
         :root {
             --bg: #f5f0eb;
@@ -14,10 +14,8 @@
             --accent-hover: #a6362a;
             --border: #d9cfc0;
             --shadow: 0 4px 20px rgba(0,0,0,0.08);
-            --shadow-hover: 0 8px 32px rgba(0,0,0,0.13);
-            --flip-duration: 0.5s;
-            --card-width: 340px;
-            --card-height: 440px;
+            --game-green: #2c7a47;
+            --game-red: #c44536;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
@@ -26,8 +24,6 @@
             min-height: 100vh;
             display:flex; flex-direction:column; align-items:center;
             padding:20px 16px 40px;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none; -webkit-user-select: none;
         }
         header { text-align:center; margin-bottom:6px; }
         header h1 { font-size:1.7rem; font-weight:700; color:var(--text); }
@@ -41,10 +37,10 @@
         }
         .mode-btn.active { background: var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 3px 12px rgba(196,69,54,0.3); }
 
-        .card-stage { perspective:1000px; margin:10px 0 18px; width:var(--card-width); height:var(--card-height); max-width:92vw; position: relative; }
+        .card-stage { perspective:1000px; margin:10px 0 18px; width:340px; height:440px; max-width:92vw; position: relative; }
         .card-inner {
             width:100%; height:100%; position:relative;
-            transition:transform var(--flip-duration) cubic-bezier(0.4,0,0.2,1);
+            transition:transform 0.5s cubic-bezier(0.4,0,0.2,1);
             transform-style:preserve-3d; cursor:pointer;
         }
         .card-inner.flipped { transform:rotateY(180deg); }
@@ -54,603 +50,400 @@
             display:flex; flex-direction:column; align-items:center; justify-content:center;
             padding:30px 24px; border:1px solid rgba(0,0,0,0.06);
         }
-        .card-face.back { transform:rotateY(180deg); background:#fdfaf3; border:1px solid rgba(180,140,100,0.18); }
-        .card-inner:not(.flipped):hover .card-face.front { box-shadow:var(--shadow-hover); }
-        .card-inner.flipped .card-face.back { box-shadow:var(--shadow-hover); }
-
-        .card-face.front .char { font-size:5.5rem; font-weight:700; color:#1a1a1a; line-height:1.1; text-align:center; word-break:keep-all; }
+        .card-face.back { transform:rotateY(180deg); background:#fdfaf3; }
+        .card-inner:not(.flipped):hover .card-face.front { box-shadow:0 8px 32px rgba(0,0,0,0.13); }
+        .card-face.front .char { font-size:5.5rem; font-weight:700; color:#1a1a1a; }
         .card-face.front .char.multi { font-size:3.2rem; }
         .card-face.front .char.long { font-size:2.2rem; }
-        .card-face.front .tap-hint { position:absolute; bottom:18px; font-size:0.7rem; color:#c4b8a5; }
         .card-face.front .favorite-btn {
-            position: absolute; top: 16px; right: 20px;
-            font-size: 2rem; cursor: pointer; color: #d4a574;
-            transition: 0.2s; line-height: 1; user-select: none;
+            position: absolute; top: 16px; right: 20px; font-size: 2rem; cursor:pointer;
+            color: #d4a574; line-height:1;
         }
-        .card-face.front .favorite-btn.active { color: #c44536; }
-        .card-face.back .pinyin { font-size:2rem; font-weight:600; color:#c44536; margin-bottom:12px; text-align:center; }
-        .card-face.back .translation { font-size:1.2rem; color:#3d3226; text-align:center; line-height:1.5; font-weight:500; }
-        .card-face.back .char-sm { font-size:1rem; color:#9a8b75; margin-bottom:16px; text-align:center; }
+        .card-face.front .favorite-btn.active { color: var(--accent); }
+        .card-face.back .pinyin { font-size:2rem; font-weight:600; color:var(--accent); margin-bottom:12px; }
+        .card-face.back .translation { font-size:1.2rem; color:#3d3226; }
+        .card-face.back .char-sm { font-size:1rem; color:#9a8b75; margin-bottom:16px; }
 
-        .nav-row {
-            display:flex; align-items:center; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:12px;
-        }
+        .nav-row { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:12px; }
         .btn {
             padding:11px 28px; border-radius:28px; border:none; font-size:1rem; font-weight:600;
-            cursor:pointer; letter-spacing:0.02em; transition:all 0.2s; font-family:inherit;
-            display:flex; align-items:center; gap:6px; background:#fff; color:var(--text);
-            border:1.5px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,0.04);
+            cursor:pointer; background:#fff; border:1.5px solid var(--border);
+            box-shadow:0 2px 8px rgba(0,0,0,0.04); transition:0.2s;
         }
-        .btn:hover { background:#f7f3eb; border-color:#c4b49a; box-shadow:0 4px 14px rgba(0,0,0,0.07); }
-        .btn:active { background:#ebe3d6; transform:scale(0.96); }
-        .btn.accent { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:0 4px 14px rgba(196,69,54,0.3); }
+        .btn:hover { background:#f7f3eb; }
+        .btn.accent { background:var(--accent); color:#fff; border-color:var(--accent); }
         .btn.accent:hover { background:var(--accent-hover); }
         .counter { font-size:0.9rem; color:var(--text-light); font-weight:500; min-width:60px; text-align:center; }
-        .btn-icon { font-size:1.2rem; }
-
         .progress-bar {
-            width: 260px; max-width: 70%; height: 6px; background: #e0d6c8; border-radius: 10px; margin: 10px 0;
-            overflow: hidden;
+            width:260px; max-width:70%; height:6px; background:#e0d6c8; border-radius:10px; margin:10px 0;
         }
-        .progress-fill { height: 100%; background: var(--accent); border-radius: 10px; transition: width 0.3s; }
+        .progress-fill { height:100%; background:var(--accent); border-radius:10px; transition: width 0.3s; }
 
-        /* Список избранного */
         .favorites-list-container {
-            width: 100%; max-width: 500px; margin: 20px auto 0; display: none;
-            background: #fefcf8; border-radius: 18px; border: 1px solid var(--border);
-            padding: 14px 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            width:100%; max-width:500px; margin:20px auto 0; background:#fefcf8;
+            border-radius:18px; border:1px solid var(--border); padding:14px 16px;
+            box-shadow:0 2px 12px rgba(0,0,0,0.04); display:none;
         }
-        .favorites-list-container.visible { display: block; }
-        .favorites-list-header {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
-        }
-        .favorites-list-header h3 { font-size: 1rem; color: var(--text); }
-        .goto-first-btn {
-            background: #f3ede5; border:1px solid var(--border); border-radius: 18px;
-            padding:5px 14px; font-size:0.8rem; cursor:pointer; transition:0.2s;
-        }
-        .goto-first-btn:hover { background:#e7dfd3; }
-        .fav-list {
-            display: flex; flex-wrap: wrap; gap: 6px; max-height: 200px; overflow-y: auto;
-        }
-        .fav-item {
-            background: #fff; border:1px solid var(--border); border-radius: 12px;
-            padding: 6px 10px; cursor: pointer; transition: 0.15s;
-            display: flex; align-items: center; gap: 6px; font-size: 0.9rem;
-        }
-        .fav-item:hover { background: #f3efe8; border-color: #c4b49a; }
-        .fav-item .fav-char { font-size: 1.1rem; font-weight: 600; }
-        .fav-item .fav-pinyin { font-size: 0.75rem; color: #5c5347; }
-        .fav-item .fav-trans { font-size: 0.75rem; color: #8b7e67; margin-left: auto; }
-        .fav-item .remove-fav {
-            margin-left: 6px; color: #c44536; font-weight: bold; font-size: 1.1rem;
-            line-height: 1; padding: 0 4px; border-radius: 8px; transition:0.15s;
-        }
-        .fav-item .remove-fav:hover { background: #ffebeb; }
-        .empty-fav-msg { color: #b0a090; text-align: center; padding: 12px; }
+        .favorites-list-container.visible { display:block; }
+        .fav-list { display:flex; flex-wrap:wrap; gap:6px; max-height:200px; overflow-y:auto; margin-top:10px; }
+        .fav-item { background:#fff; border:1px solid var(--border); border-radius:12px; padding:6px 10px; cursor:pointer; display:flex; align-items:center; gap:6px; font-size:0.9rem; }
+        .fav-item:hover { background:#f3efe8; }
+        .fav-item .fav-char { font-size:1.1rem; font-weight:600; }
+        .fav-item .fav-pinyin { font-size:0.75rem; color:#5c5347; }
+        .fav-item .remove-fav { color:var(--accent); font-weight:bold; margin-left:6px; cursor:pointer; }
 
+        .game-panel {
+            margin-top:16px; background:#f2efe8; border-radius:14px; padding:18px;
+            text-align:center; display:none;
+        }
+        .game-panel.active { display:block; }
+        .game-char { font-size:3rem; font-weight:700; margin-bottom:16px; }
+        .options { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .option-btn {
+            background:#fff; border:2px solid var(--border); border-radius:14px;
+            padding:12px; font-size:1.1rem; cursor:pointer; transition:0.15s;
+        }
+        .option-btn:hover { background:#f0e8db; }
+        .option-btn.correct { background:#c8e6c9; border-color:#2c7a47; }
+        .option-btn.wrong { background:#ffcdd2; border-color:#c44536; }
+        .game-score { margin-top:12px; font-weight:600; }
         .kbd-hint { margin-top:16px; font-size:0.75rem; color:#b5a898; text-align:center; }
-        .kbd-hint span { display:inline-block; background:#e8e0d5; border-radius:5px; padding:2px 8px; margin:0 2px; font-weight:600; color:#6b5e4e; font-size:0.7rem; border:1px solid #d5ccbc; }
 
+        /* Адаптивность для телефонов */
         @media (max-width:480px) {
-            :root { --card-width:290px; --card-height:380px; }
+            .card-stage { width:290px; height:380px; }
             .card-face.front .char { font-size:4rem; }
             .card-face.front .char.multi { font-size:2.5rem; }
             .card-face.front .char.long { font-size:1.8rem; }
             .card-face.back .pinyin { font-size:1.5rem; }
             .card-face.back .translation { font-size:1rem; }
-            .btn { padding:10px 18px; font-size:0.9rem; }
-            .mode-btn { padding:6px 14px; font-size:0.8rem; }
+            .btn {
+                padding:14px 24px;
+                font-size:1.1rem;
+            }
+            .mode-btn {
+                padding:10px 18px;
+                font-size:1rem;
+            }
+            .fav-list {
+                flex-direction: column;
+                flex-wrap: nowrap;
+                gap: 8px;
+            }
+            .fav-item {
+                width: 100%;
+            }
+            .game-char { font-size:2.5rem; }
+            .option-btn { font-size:1rem; padding:10px; }
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>📚 Китайские карточки</h1>
-        <p class="subtitle">нажми на карточку, чтобы увидеть пиньинь и перевод</p>
-    </header>
+<header>
+    <h1>📚 Китайские карточки</h1>
+    <p class="subtitle">нажми на карточку, чтобы увидеть пиньинь и перевод</p>
+</header>
 
-    <div class="mode-switch">
-        <button class="mode-btn active" data-mode="all">Все слова</button>
-        <button class="mode-btn" data-mode="favorites">⭐ Повторить</button>
-    </div>
+<div class="mode-switch">
+    <button class="mode-btn active" data-mode="all">Все слова</button>
+    <button class="mode-btn" data-mode="favorites">⭐ Повторить</button>
+</div>
 
-    <div class="card-stage" id="cardStage">
-        <div class="card-inner" id="cardInner">
-            <div class="card-face front">
-                <span class="favorite-btn" id="favoriteBtn">☆</span>
-                <span class="char" id="charDisplay"></span>
-                <span class="tap-hint">👆 нажми</span>
-            </div>
-            <div class="card-face back">
-                <span class="char-sm" id="charSm"></span>
-                <span class="pinyin" id="pinyinDisplay"></span>
-                <span class="translation" id="transDisplay"></span>
-            </div>
+<div class="card-stage" id="cardStage">
+    <div class="card-inner" id="cardInner">
+        <div class="card-face front">
+            <span class="favorite-btn" id="favoriteBtn">☆</span>
+            <span class="char" id="charDisplay"></span>
+            <span class="tap-hint" style="position:absolute; bottom:18px; font-size:0.7rem; color:#c4b8a5;">👆 нажми</span>
+        </div>
+        <div class="card-face back">
+            <span class="char-sm" id="charSm"></span>
+            <span class="pinyin" id="pinyinDisplay"></span>
+            <span class="translation" id="transDisplay"></span>
         </div>
     </div>
+</div>
 
-    <div class="progress-bar">
-        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+<div class="nav-row">
+    <button class="btn" id="btnPrev">◀ Назад</button>
+    <span class="counter" id="counter">1 / 1</span>
+    <button class="btn" id="btnNext">Вперёд ▶</button>
+    <button class="btn accent" id="btnFlip">🔄 Перевернуть</button>
+</div>
+
+<div class="favorites-list-container" id="favoritesListContainer">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>📋 Слова для повторения</h3>
+        <button class="btn" id="toggleGameBtn">🎮 Игра: угадай пиньинь</button>
     </div>
-
-    <div class="nav-row">
-        <button class="btn" id="btnPrev"><span class="btn-icon">◀</span> Назад</button>
-        <span class="counter" id="counter">1 / 1</span>
-        <button class="btn" id="btnNext">Вперёд <span class="btn-icon">▶</span></button>
-        <button class="btn accent" id="btnFlip">🔄 Перевернуть</button>
+    <div class="game-panel" id="gamePanel">
+        <div class="game-char" id="gameChar"></div>
+        <div class="options" id="optionsContainer"></div>
+        <div class="game-score" id="gameScore"></div>
     </div>
+    <div class="fav-list" id="favList"></div>
+    <button class="btn" id="gotoFirstBtn" style="margin-top:8px;">↺ К первой карточке</button>
+</div>
 
-    <!-- Список избранного (только в режиме повтора) -->
-    <div class="favorites-list-container" id="favoritesListContainer">
-        <div class="favorites-list-header">
-            <h3>📋 Слова для повторения</h3>
-            <button class="goto-first-btn" id="gotoFirstBtn">↺ К первой</button>
-        </div>
-        <div class="fav-list" id="favList"></div>
-    </div>
+<p class="kbd-hint">⌨ <span>←</span><span>→</span> переключение | <span>пробел</span> переворот</p>
 
-    <p class="kbd-hint">
-        ⌨ <span>←</span> <span>→</span> переключение &nbsp;|&nbsp; <span>пробел</span> переворот
-    </p>
+<script>
+(function() {
+    const allWords = [
+        ['你好','nǐ hǎo','Здравствуй(те)'],['是','shì','быть'],['老师','lǎo shī','учитель'],
+        ['学生','xué sheng','ученик'],['谢谢','xiè xie','спасибо'],['不客气','bú kè qi','пожалуйста'],
+        ['对不起','duì bu qǐ','извините'],['没关系','méi guān xi','ничего страшного'],
+        ['中国','zhōng guó','Китай'],['美国','měi guó','США'],['英国','yīng guó','Англия'],
+        ['俄罗斯','é luó sī','Россия'],['法国','fǎ guó','Франция'],['日本','rì běn','Япония'],
+        ['韩国','hán guó','Корея'],['加拿大','jiā ná dà','Канада'],
+        ['澳大利亚','ào dà lì yà','Австралия'],['北京','běi jīng','Пекин'],
+        ['莫斯科','mò sī kē','Москва'],['上海','shàng hǎi','Шанхай'],
+        ['家','jiā','дом'],['爸爸','bà ba','папа'],['妈妈','mā ma','мама'],
+        ['哥哥','gē ge','старший брат'],['姐姐','jiě jie','старшая сестра'],
+        ['弟弟','dì di','младший брат'],['妹妹','mèi mei','младшая сестра'],
+        ['喜欢','xǐ huān','нравиться'],['热','rè','жаркий'],['冷','lěng','холодный'],
+        ['水','shuǐ','вода'],['火','huǒ','огонь'],['书','shū','книга'],
+        ['音乐','yīn yuè','музыка'],['朋友','péng you','друг']
+    ];
 
-    <script>
-        (function() {
-            // Полный список слов (без повторов)
-            const allWords = [
-                ['你好', 'nǐ hǎo', 'Здравствуй(те)'], ['是', 'shì', 'быть, являться; да'],
-                ['老师', 'lǎo shī', 'учитель, преподаватель'], ['吗', 'ma', 'вопросительная частица'],
-                ['不', 'bù', 'не, нет'], ['学生', 'xué sheng', 'ученик, студент'],
-                ['她', 'tā', 'она'], ['谢谢', 'xiè xie', 'спасибо'],
-                ['不客气', 'bú kè qi', 'пожалуйста (ответ на спасибо)'], ['您', 'nín', 'Вы (вежливая форма)'],
-                ['留学生', 'liú xué shēng', 'иностранный студент'], ['叫', 'jiào', 'звать, называться'],
-                ['什么', 'shén me', 'что, какой'], ['名字', 'míng zi', 'имя'],
-                ['同学', 'tóng xué', 'одноклассник, однокурсник'], ['们', 'men', 'суффикс множественного числа'],
-                ['来', 'lái', 'приходить, приезжать'], ['介绍', 'jiè shào', 'представлять, знакомить'],
-                ['一下儿', 'yī xiàr', 'немного, слегка'], ['姓', 'xìng', 'фамилия'],
-                ['的', 'de', 'частица принадлежности'], ['哪', 'nǎ', 'который, какой'],
-                ['国', 'guó', 'страна, государство'], ['人', 'rén', 'человек, люди'],
-                ['他', 'tā', 'он'], ['认识', 'rèn shi', 'знать (кого-то)'],
-                ['很', 'hěn', 'очень'], ['高兴', 'gāo xìng', 'радостный, довольный'],
-                ['也', 'yě', 'тоже, также'], ['呢', 'ne', 'вопросительная частица'],
-                ['那', 'nà', 'тот, та; тогда'], ['谁', 'shéi', 'кто'],
-                ['书', 'shū', 'книга'], ['同屋', 'tóng wū', 'сосед по комнате'],
-                ['汉语', 'hàn yǔ', 'китайский язык (устный)'], ['课本', 'kè běn', 'учебник'],
-                ['词典', 'cí diǎn', 'словарь'], ['就是', 'jiù shì', 'именно, как раз'],
-                ['日语', 'rì yǔ', 'японский язык'], ['这', 'zhè', 'этот, эта, это'],
-                ['杂志', 'zá zhì', 'журнал'], ['音乐', 'yīn yuè', 'музыка'],
-                ['朋友', 'péng you', 'друг, подруга'], ['请问', 'qǐng wèn', 'разрешите спросить'],
-                ['图书馆', 'tú shū guǎn', 'библиотека'], ['在', 'zài', 'находиться в'],
-                ['哪儿', 'nǎr', 'где'], ['对不起', 'duì bu qǐ', 'извините'],
-                ['个', 'gè', 'счётное слово'], ['学校', 'xué xiào', 'школа'],
-                ['知道', 'zhī dào', 'знать, ведать'], ['没关系', 'méi guān xi', 'ничего страшного'],
-                ['这儿', 'zhèr', 'здесь, тут'], ['教学', 'jiào xué', 'преподавание'],
-                ['楼', 'lóu', 'здание, этаж'], ['那儿', 'nàr', 'там'],
-                ['宿舍', 'sù shè', 'общежитие'], ['北边', 'běi biān', 'северная сторона'],
-                ['左边', 'zuǒ biān', 'левая сторона'], ['右边', 'yòu biān', 'правая сторона'],
-                ['不用谢', 'bú yòng xiè', 'не за что'], ['不用', 'bú yòng', 'не нужно'],
-                ['专业', 'zhuān yè', 'специальность'], ['国际', 'guó jì', 'международный'],
-                ['关系', 'guān xi', 'отношение, связь'], ['中文', 'zhōng wén', 'китайский язык (письменный)'],
-                ['系', 'xì', 'факультет, отделение'], ['研究生', 'yán jiū shēng', 'аспирант'],
-                ['现代', 'xiàn dài', 'современный'], ['文学', 'wén xué', 'литература'],
-                ['东边', 'dōng biān', 'восточная сторона'], ['有', 'yǒu', 'иметь, есть'],
-                ['空儿', 'kòngr', 'свободное время'], ['时候', 'shí hou', 'время, момент'],
-                ['欢迎', 'huān yíng', 'добро пожаловать'], ['去', 'qù', 'идти, ехать'],
-                ['玩儿', 'wánr', 'играть, развлекаться'], ['卫生间', 'wèi shēng jiān', 'туалет'],
-                ['教室', 'jiào shì', 'аудитория'], ['旁边', 'páng biān', 'рядом'],
-                ['西边', 'xī biān', 'западная сторона'], ['对', 'duì', 'правильный'],
-                ['大学', 'dà xué', 'университет'], ['早上', 'zǎo shang', 'раннее утро'],
-                ['家', 'jiā', 'дом, семья'], ['口', 'kǒu', 'счётное слово для семьи'],
-                ['爷爷', 'yé ye', 'дедушка'], ['奶奶', 'nǎi nai', 'бабушка'],
-                ['爸爸', 'bà ba', 'папа'], ['妈妈', 'mā ma', 'мама'],
-                ['哥哥', 'gē ge', 'старший брат'], ['姐姐', 'jiě jie', 'старшая сестра'],
-                ['家庭', 'jiā tíng', 'семья'], ['一般', 'yī bān', 'обычно'],
-                ['只', 'zhǐ', 'только'], ['孩子', 'hái zi', 'ребёнок'],
-                ['弟弟', 'dì di', 'младший брат'], ['妹妹', 'mèi mei', 'младшая сестра'],
-                ['还', 'hái', 'ещё'], ['条', 'tiáo', 'счётное слово'],
-                ['狗', 'gǒu', 'собака'], ['这样', 'zhè yàng', 'так'],
-                ['照片', 'zhào piàn', 'фотография'], ['外公', 'wài gōng', 'дедушка (мать)'],
-                ['外婆', 'wài pó', 'бабушка (мать)'], ['姥姥', 'lǎo lao', 'бабушка'],
-                ['老爷', 'lǎo ye', 'дедушка'], ['几', 'jǐ', 'сколько'],
-                ['点', 'diǎn', 'час'], ['九', 'jiǔ', 'девять'],
-                ['八', 'bā', 'восемь'], ['五十', 'wǔ shí', 'пятьдесят'],
-                ['分', 'fēn', 'минута'], ['十', 'shí', 'десять'],
-                ['半', 'bàn', 'половина'], ['六', 'liù', 'шесть'],
-                ['一', 'yī', 'один'], ['刻', 'kè', 'четверть'],
-                ['零', 'líng', 'ноль'], ['二', 'èr', 'два'],
-                ['三', 'sān', 'три'], ['四', 'sì', 'четыре'],
-                ['五', 'wǔ', 'пять'], ['七', 'qī', 'семь'],
-                ['两', 'liǎng', 'два'], ['上课', 'shàng kè', 'начало урока'],
-                ['大部分', 'dà bù fen', 'большая часть'], ['部分', 'bù fen', 'часть'],
-                ['下课', 'xià kè', 'конец урока'], ['太...了', 'tài... le', 'слишком'],
-                ['早', 'zǎo', 'рано'], ['讲座', 'jiǎng zuò', 'лекция'],
-                ['开始', 'kāi shǐ', 'начинать'], ['现在', 'xiàn zài', 'сейчас'],
-                ['差', 'chà', 'без'], ['一会儿', 'yī huìr', 'немного погодя'],
-                ['见', 'jiàn', 'видеть'], ['明天', 'míng tiān', 'завтра'],
-                ['课', 'kè', 'урок'], ['上午', 'shàng wǔ', 'до полудня'],
-                ['下午', 'xià wǔ', 'после полудня'], ['今天', 'jīn tiān', 'сегодня'],
-                ['晚上', 'wǎn shang', 'вечер'], ['时间', 'shí jiān', 'время'],
-                ['周末', 'zhōu mò', 'выходные'], ['星期', 'xīng qī', 'неделя'],
-                ['月', 'yuè', 'месяц'], ['年', 'nián', 'год'],
-                ['昨天', 'zuó tiān', 'вчера'], ['去年', 'qù nián', 'прошлый год'],
-                ['今年', 'jīn nián', 'этот год'], ['明年', 'míng nián', 'следующий год'],
-                ['号', 'hào', 'номер'], ['分钟', 'fēn zhōng', 'минута'],
-                ['深夜', 'shēn yè', 'глубокая ночь'], ['凌晨', 'líng chén', 'рассвет'],
-                ['星期天', 'xīng qī tiān', 'воскресенье'], ['星期三', 'xīng qī sān', 'среда'],
-                ['中午', 'zhōng wǔ', 'полдень'], ['小时', 'xiǎo shí', 'час'],
-                ['天气', 'tiān qì', 'погода'], ['怎么样', 'zěn me yàng', 'как'],
-                ['不太', 'bú tài', 'не очень'], ['风', 'fēng', 'ветер'],
-                ['雨', 'yǔ', 'дождь'], ['冷', 'lěng', 'холодно'],
-                ['渡', 'dù', 'градус'], ['晴天', 'qíng tiān', 'ясно'],
-                ['秋天', 'qiū tiān', 'осень'], ['热', 'rè', 'жарко'],
-                ['舒服', 'shū fu', 'комфортно'], ['最', 'zuì', 'самый'],
-                ['季节', 'jì jié', 'сезон'], ['冬天', 'dōng tiān', 'зима'],
-                ['比较', 'bǐ jiào', 'сравнительно'], ['差不多', 'chà bu duō', 'почти'],
-                ['零下', 'líng xià', 'ниже нуля'], ['常常', 'cháng cháng', 'часто'],
-                ['下', 'xià', 'идти (осадки)'], ['雪', 'xuě', 'снег'],
-                ['喜欢', 'xǐ huān', 'нравиться'], ['夏天', 'xià tiān', 'лето'],
-                ['游泳', 'yóu yǒng', 'плавать'], ['春天', 'chūn tiān', 'весна'],
-                ['阴天', 'yīn tiān', 'пасмурно'], ['多云', 'duō yún', 'облачно'],
-                ['下雨', 'xià yǔ', 'дождь'], ['下雪', 'xià xuě', 'снег'],
-                ['外面', 'wài miàn', 'снаружи'], ['刮大风', 'guā dà fēng', 'ветер'],
-                ['台风', 'tái fēng', 'тайфун'], ['风雪', 'fēng xuě', 'метель'],
-                ['气温', 'qì wēn', 'температура'], ['左右', 'zuǒ yòu', 'примерно'],
-                ['暖和', 'nuǎn huo', 'тепло'], ['凉快', 'liáng kuai', 'прохладно'],
-                ['经常', 'jīng cháng', 'часто'], ['低', 'dī', 'низкий'],
-                ['比较冷', 'bǐ jiào lěng', 'холодновато'], ['难', 'nán', 'трудный'],
-                ['雨伞', 'yǔ sǎn', 'зонт'], ['带雨伞', 'dài yǔ sǎn', 'взять зонт'],
-                ['预报', 'yù bào', 'прогноз'], ['雷雨', 'léi yǔ', 'гроза'],
-                ['堆雪人', 'duī xuě rén', 'лепить снеговика'], ['雪花', 'xuě huā', 'снежинка'],
-                ['叶', 'yè', 'лист'], ['滑雪', 'huá xuě', 'лыжи'],
-                ['滑冰', 'huá bīng', 'коньки'], ['雨鞋', 'yǔ xié', 'сапоги'],
-                ['雨衣', 'yǔ yī', 'дождевик'], ['医生', 'yī shēng', 'врач'],
-                ['律师', 'lǜ shī', 'юрист'], ['工程师', 'gōng chéng shī', 'инженер'],
-                ['记者', 'jì zhě', 'журналист'], ['警察', 'jǐng chá', 'полиция'],
-                ['护士', 'hù shi', 'медсестра'], ['厨师', 'chú shī', 'повар'],
-                ['秘书', 'mì shū', 'секретарь'], ['经理', 'jīng lǐ', 'менеджер'],
-                ['理发师', 'lǐ fà shī', 'парикмахер'], ['服务员', 'fú wù yuán', 'официант'],
-                ['售货员', 'shòu huò yuán', 'продавец'], ['师傅', 'shī fu', 'мастер'],
-                ['演员', 'yǎn yuán', 'актёр'], ['运动员', 'yùn dòng yuán', 'спортсмен'],
-                ['国家', 'guó jiā', 'страна'], ['俄罗斯', 'é luó sī', 'Россия'],
-                ['中国', 'zhōng guó', 'Китай'], ['英国', 'yīng guó', 'Англия'],
-                ['美国', 'měi guó', 'США'], ['法国', 'fǎ guó', 'Франция'],
-                ['韩国', 'hán guó', 'Корея'], ['加拿大', 'jiā ná dà', 'Канада'],
-                ['澳大利亚', 'ào dà lì yà', 'Австралия'], ['日本', 'rì běn', 'Япония'],
-                ['新西兰', 'xīn xī lán', 'Новая Зеландия'], ['首都', 'shǒu dū', 'столица'],
-                ['北京', 'běi jīng', 'Пекин'], ['莫斯科', 'mò sī kē', 'Москва'],
-                ['上海', 'shàng hǎi', 'Шанхай'], ['圣彼得堡', 'shèng bǐ dé bǎo', 'Санкт-Петербург'],
-                ['香港', 'xiāng gǎng', 'Гонконг'], ['奥伦堡', 'ào lún bǎo', 'Оренбург'],
-                ['伦敦', 'lún dūn', 'Лондон'], ['没有', 'méi yǒu', 'не иметь'],
-                ['自行车', 'zì xíng chē', 'велосипед'], ['吧', 'ba', 'частица'],
-                ['事', 'shì', 'дело'], ['可是', 'kě shì', 'но'],
-                ['没问题', 'méi wèn tí', 'без проблем'], ['钥匙', 'yào shi', 'ключ'],
-                ['车', 'chē', 'машина'], ['车棚', 'chē péng', 'навес'],
-                ['里', 'lǐ', 'внутри'], ['后边', 'hòu biān', 'сзади'],
-                ['电影院', 'diàn yǐng yuàn', 'кинотеатр'], ['电影', 'diàn yǐng', 'фильм'],
-                ['听说', 'tīng shuō', 'слышать'], ['又名', 'yòu míng', 'другое название'],
-                ['当然', 'dāng rán', 'конечно'], ['啊', 'a', 'междометие'],
-                ['不过', 'bú guò', 'однако'], ['怎么', 'zěn me', 'как'],
-                ['走路', 'zǒu lù', 'пешком'], ['和', 'hé', 'и'],
-                ['公共汽车', 'gōng gòng qì chē', 'автобус'], ['都', 'dōu', 'все'],
-                ['到', 'dào', 'добираться'], ['骑', 'qí', 'ехать верхом'],
-                ['快', 'kuài', 'быстро'], ['就', 'jiù', 'сразу'],
-                ['校园', 'xiào yuán', 'кампус'], ['东南', 'dōng nán', 'юго-восток'],
-                ['东', 'dōng', 'восток'], ['出租车', 'chū zū chē', 'такси'],
-                ['面包车', 'miàn bāo chē', 'микроавтобус'], ['电车', 'diàn chē', 'троллейбус'],
-                ['地铁', 'dì tiě', 'метро'], ['火车', 'huǒ chē', 'поезд'],
-                ['飞机', 'fēi jī', 'самолёт'], ['船', 'chuán', 'корабль'],
-                ['开车', 'kāi chē', 'вести машину'], ['坐车', 'zuò chē', 'ехать на транспорте'],
-                ['火车站', 'huǒ chē zhàn', 'вокзал'], ['座', 'zuò', 'место'],
-                ['喂', 'wèi', 'алло'], ['干', 'gàn', 'делать'],
-                ['做', 'zuò', 'делать'], ['作业', 'zuò yè', 'домашнее задание'],
-                ['每', 'měi', 'каждый'], ['天', 'tiān', 'день'],
-                ['多', 'duō', 'много'], ['从...到', 'cóng... dào', 'от... до'],
-                ['节', 'jié', 'урок'], ['听写', 'tīng xiě', 'диктант'],
-                ['所以', 'suǒ yǐ', 'поэтому'], ['酒吧', 'jiǔ bā', 'бар'],
-                ['喝', 'hē', 'пить'], ['咖啡', 'kā fēi', 'кофе'],
-                ['书店', 'shū diàn', 'книжный магазин'], ['对面', 'duì miàn', 'напротив'],
-                ['自己', 'zì jǐ', 'сам'], ['正在', 'zhèng zài', 'прямо сейчас'],
-                ['唱歌', 'chàng gē', 'петь'], ['回', 'huí', 'возвращаться'],
-                ['借书', 'jiè shū', 'взять книгу'], ['先...然后', 'xiān... rán hòu', 'сначала... потом'],
-                ['银行', 'yín háng', 'банк'], ['换钱', 'huàn qián', 'обмен валюты'],
-                ['商店', 'shāng diàn', 'магазин'], ['东西', 'dōng xi', 'вещь'],
-                ['咱们', 'zán men', 'мы'], ['一起', 'yī qǐ', 'вместе'],
-                ['关门', 'guān mén', 'закрывать'], ['打算', 'dǎ suàn', 'планировать'],
-                ['购物中心', 'gòu wù zhōng xīn', 'торговый центр'], ['购物', 'gòu wù', 'шопинг'],
-                ['中心', 'zhōng xīn', 'центр'], ['贵', 'guì', 'дорогой'],
-                ['还可以', 'hái kě yǐ', 'неплохо'], ['质量', 'zhì liàng', 'качество'],
-                ['不错', 'bú cuò', 'неплохой'], ['正', 'zhèng', 'ровно'],
-                ['衣服', 'yī fu', 'одежда'], ['开门', 'kāi mén', 'открывать'],
-                ['吃饭', 'chī fàn', 'есть'], ['餐', 'cān', 'еда'],
-                ['中餐', 'zhōng cān', 'китайская кухня'], ['厨房', 'chú fáng', 'кухня'],
-                ['啤酒', 'pí jiǔ', 'пиво'], ['一瓶啤酒', 'yī píng pí jiǔ', 'бутылка пива'],
-                ['水', 'shuǐ', 'вода'], ['饭馆', 'fàn guǎn', 'ресторан'],
-                ['食堂', 'shí táng', 'столовая'], ['新鲜', 'xīn xiān', 'свежий'],
-                ['钱', 'qián', 'деньги'], ['元', 'yuán', 'юань'],
-                ['块', 'kuài', 'юань'], ['毛', 'máo', 'мао'],
-                ['角', 'jiǎo', 'цзяо'], ['人民币', 'rén mín bì', 'жэньминьби'],
-                ['零钱', 'líng qián', 'мелочь'], ['买', 'mǎi', 'покупать'],
-                ['一共', 'yī gòng', 'всего'], ['给', 'gěi', 'давать'],
-                ['把', 'bǎ', 'сч. слово'], ['位', 'wèi', 'сч. слово'],
-                ['高', 'gāo', 'высокий'], ['矮', 'ǎi', 'низкий'],
-                ['漂亮', 'piào liang', 'красивый'], ['帅', 'shuài', 'красивый (муж)'],
-                ['酷', 'kù', 'крутой'], ['年轻', 'nián qīng', 'молодой'],
-                ['可爱', 'kě ài', 'милый'], ['肥', 'féi', 'толстый'],
-                ['瘦', 'shòu', 'худой'], ['脏', 'zāng', 'грязный'],
-                ['旧', 'jiù', 'старый'], ['新', 'xīn', 'новый'],
-                ['帅哥', 'shuài gē', 'красавец'], ['美女', 'měi nǚ', 'красавица'],
-                ['年轻人', 'nián qīng rén', 'молодёжь'], ['真的', 'zhēn de', 'настоящий'],
-                ['觉得', 'jué de', 'чувствовать'], ['打篮球', 'dǎ lán qiú', 'баскетбол'],
-                ['电视剧', 'diàn shì jù', 'сериал'], ['但是', 'dàn shì', 'но'],
-                ['派对', 'pài duì', 'вечеринка'], ['见面', 'jiàn miàn', 'встреча'],
-                ['跟', 'gēn', 'с'], ['累了', 'lèi le', 'устал'],
-                ['学院', 'xué yuàn', 'институт'], ['空调', 'kōng tiáo', 'кондиционер'],
-                ['店员', 'diàn yuán', 'продавец'], ['洗澡', 'xǐ zǎo', 'принимать ванну'],
-                ['打扫', 'dǎ sǎo', 'убирать'], ['丢', 'diū', 'терять'],
-                ['用', 'yòng', 'использовать'], ['要', 'yào', 'хотеть'],
-                ['看', 'kàn', 'смотреть'], ['跳舞', 'tiào wǔ', 'танцевать'],
-                ['弹钢琴', 'tán gāng qín', 'пианино'], ['弹吉他', 'tán jí tā', 'гитара'],
-                ['玩儿电脑游戏', 'wánr diàn nǎo yóu xì', 'комп. игры'], ['踢足球', 'tī zú qiú', 'футбол'],
-                ['足球', 'zú qiú', 'футбол'], ['打球', 'dǎ qiú', 'играть в мяч'],
-                ['爱好', 'ài hào', 'хобби'], ['旅游', 'lǚ yóu', 'путешествовать'],
-                ['休息', 'xiū xi', 'отдых'], ['出去', 'chū qù', 'выйти'],
-                ['卡拉OK', 'kǎ lā OK', 'караоке'], ['羽绒服', 'yǔ róng fú', 'пуховик'],
-                ['俩', 'liǎ', 'двое'], ['别的', 'bié de', 'другой'],
-                ['有一点儿', 'yǒu yī diǎnr', 'немного'], ['旧书', 'jiù shū', 'старая книга'],
-                ['怎么办', 'zěn me bàn', 'что делать'], ['挺', 'tǐng', 'очень'],
-                ['累', 'lèi', 'усталый'], ['到过', 'dào guò', 'бывал'],
-                ['市场', 'shì chǎng', 'рынок'], ['邮局', 'yóu jú', 'почта'],
-                ['服装市场', 'fú zhuāng shì chǎng', 'рынок одежды'],
-                ['超市', 'chāo shì', 'супермаркет'], ['洗手间', 'xǐ shǒu jiān', 'туалет'],
-                ['饭馆', 'fàn guǎn', 'ресторан'], ['医院', 'yī yuàn', 'больница'],
-                ['公园', 'gōng yuán', 'парк'],
-                ['因为', 'yīn wèi', 'потому что'], ['而且', 'ér qiě', 'к тому же'],
-                ['或者', 'huò zhě', 'или'], ['还是', 'hái shì', 'или'],
-                ['如果', 'rú guǒ', 'если'], ['虽然', 'suī rán', 'хотя'],
-                ['一边...一边', 'yī biān... yī biān', 'одновременно'], ['才', 'cái', 'только что'],
-                ['南边', 'nán biān', 'юг'], ['前边', 'qián biān', 'перед'],
-                ['里边', 'lǐ biān', 'внутри'], ['外边', 'wài biān', 'снаружи'],
-                ['上边', 'shàng biān', 'наверху'], ['下边', 'xià biān', 'внизу'],
-                ['电话', 'diàn huà', 'телефон'], ['号码', 'hào mǎ', 'номер'],
-                ['手机', 'shǒu jī', 'мобильный'], ['短信', 'duǎn xìn', 'сообщение'],
-                ['眼睛', 'yǎn jing', 'глаза']
-            ];
+    const uniqueWords = [];
+    const seen = new Set();
+    for (const w of allWords) if (!seen.has(w[0])) { seen.add(w[0]); uniqueWords.push(w); }
 
-            // Убираем повторы по первому элементу (иероглиф)
-            const uniqueWords = [];
-            const seen = new Set();
-            for (const w of allWords) {
-                if (!seen.has(w[0])) {
-                    seen.add(w[0]);
-                    uniqueWords.push(w);
-                }
+    let favorites = JSON.parse(localStorage.getItem('flashcardFavorites') || '[]');
+    let mode = 'all';
+    let currentIndex = 0;
+    let isFlipped = false;
+
+    const cardInner = document.getElementById('cardInner');
+    const charDisplay = document.getElementById('charDisplay');
+    const charSm = document.getElementById('charSm');
+    const pinyinDisplay = document.getElementById('pinyinDisplay');
+    const transDisplay = document.getElementById('transDisplay');
+    const counter = document.getElementById('counter');
+    const progressFill = document.getElementById('progressFill');
+    const favoriteBtn = document.getElementById('favoriteBtn');
+    const favoritesListContainer = document.getElementById('favoritesListContainer');
+    const favList = document.getElementById('favList');
+    const gamePanel = document.getElementById('gamePanel');
+    const gameChar = document.getElementById('gameChar');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const gameScore = document.getElementById('gameScore');
+
+    let gameScoreCount = 0;
+
+    function getCurrentWordList() { return mode === 'all' ? uniqueWords : favorites; }
+    function getCurrentWord() { const list = getCurrentWordList(); return list[currentIndex] || null; }
+
+    function charSizeClass(hanzi) {
+        const len = hanzi.length;
+        if (len <= 2) return '';
+        if (len <= 4) return 'multi';
+        return 'long';
+    }
+
+    function updateFavoriteButton() {
+        const word = getCurrentWord();
+        if (!word) return;
+        const isFav = favorites.some(w => w[0] === word[0]);
+        favoriteBtn.textContent = isFav ? '★' : '☆';
+        favoriteBtn.classList.toggle('active', isFav);
+    }
+
+    function renderCard() {
+        const word = getCurrentWord();
+        if (!word) {
+            charDisplay.textContent = '—'; charSm.textContent = '';
+            pinyinDisplay.textContent = 'Нет слов'; transDisplay.textContent = '';
+            counter.textContent = '0 / 0'; progressFill.style.width = '0%';
+            favoriteBtn.style.display = 'none';
+            renderFavoritesList();
+            return;
+        }
+        favoriteBtn.style.display = 'block';
+        charDisplay.textContent = word[0];
+        charDisplay.className = 'char ' + charSizeClass(word[0]);
+        charSm.textContent = word[0];
+        pinyinDisplay.textContent = word[1];
+        transDisplay.textContent = word[2];
+        const list = getCurrentWordList();
+        counter.textContent = `${currentIndex+1}/${list.length}`;
+        progressFill.style.width = list.length ? ((currentIndex+1)/list.length*100)+'%' : '0%';
+        isFlipped = false; cardInner.classList.remove('flipped');
+        updateFavoriteButton();
+        renderFavoritesList();
+    }
+
+    function flipCard() { if (!getCurrentWord()) return; isFlipped = !isFlipped; cardInner.classList.toggle('flipped', isFlipped); }
+    function goToCard(index) {
+        const list = getCurrentWordList();
+        if (!list.length) { currentIndex = 0; renderCard(); return; }
+        if (index < 0) index = list.length - 1;
+        if (index >= list.length) index = 0;
+        currentIndex = index; renderCard();
+    }
+
+    function switchMode(newMode) {
+        if (mode === newMode) return;
+        mode = newMode; currentIndex = 0;
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+        favoritesListContainer.classList.toggle('visible', mode === 'favorites');
+        gamePanel.classList.remove('active');
+        renderCard();
+    }
+
+    function toggleFavorite() {
+        const word = getCurrentWord();
+        if (!word) return;
+        const idx = favorites.findIndex(w => w[0] === word[0]);
+        if (idx === -1) favorites.push([...word]);
+        else favorites.splice(idx, 1);
+        localStorage.setItem('flashcardFavorites', JSON.stringify(favorites));
+        updateFavoriteButton();
+        if (mode === 'favorites') {
+            if (!favorites.length) currentIndex = 0;
+            else if (currentIndex >= favorites.length) currentIndex = favorites.length - 1;
+        }
+        renderCard();
+    }
+
+    function renderFavoritesList() {
+        if (mode !== 'favorites') { favList.innerHTML = ''; return; }
+        favList.innerHTML = favorites.length ? favorites.map((w,i) => {
+            const active = (i === currentIndex);
+            return `<div class="fav-item" data-fav-index="${i}" style="${active?'background:#fce4d6':''}">
+                <span class="fav-char">${w[0]}</span>
+                <span class="fav-pinyin">${w[1]}</span>
+                <span class="remove-fav" data-remove="${i}">✕</span>
+            </div>`;
+        }).join('') : '<div style="color:#b0a090; padding:10px;">⭐ Нет сохранённых слов</div>';
+    }
+
+    // Игра
+    function changeTone(syllable, newTone) {
+        const vowels = 'aeiouüAEIOUÜ';
+        let result = syllable.replace(/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/g, (c) => {
+            const base = c.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const map = { 'a':['ā','á','ǎ','à'], 'e':['ē','é','ě','è'], 'i':['ī','í','ǐ','ì'],
+                          'o':['ō','ó','ǒ','ò'], 'u':['ū','ú','ǔ','ù'], 'ü':['ǖ','ǘ','ǚ','ǜ'] };
+            return map[base]?.[parseInt(newTone)-1] || base;
+        });
+        if (result === syllable) {
+            const base = syllable.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const lastVowel = [...base].filter(c => 'aeiouü'.includes(c)).pop();
+            if (lastVowel) {
+                const map = { 'a':['ā','á','ǎ','à'], 'e':['ē','é','ě','è'], 'i':['ī','í','ǐ','ì'],
+                              'o':['ō','ó','ǒ','ò'], 'u':['ū','ú','ǔ','ù'], 'ü':['ǖ','ǘ','ǚ','ǜ'] };
+                const withTone = map[lastVowel]?.[parseInt(newTone)-1] || lastVowel;
+                return base.replace(lastVowel, withTone);
             }
+        }
+        return result;
+    }
 
-            // Избранное (из localStorage)
-            let favorites = JSON.parse(localStorage.getItem('flashcardFavorites') || '[]');
-            let mode = 'all'; // 'all' или 'favorites'
-            let currentIndex = 0;
-            let isFlipped = false;
+    function generateFakePinyin(correctPinyin) {
+        const syllables = correctPinyin.split(' ');
+        const tones = ['1','2','3','4','0'];
+        return syllables.map(s => {
+            const currentTone = [...s].some(c => 'āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ'.includes(c)) ?
+                (s.match(/[āáǎà]/)? '1' : s.match(/[ēéěè]/)? '2' : s.match(/[īíǐì]/)? '3' : s.match(/[ōóǒò]/)? '4' : '0') : '0';
+            const otherTones = tones.filter(t => t !== currentTone);
+            const newTone = otherTones[Math.floor(Math.random() * otherTones.length)];
+            return changeTone(s, newTone);
+        }).join(' ');
+    }
 
-            const cardInner = document.getElementById('cardInner');
-            const charDisplay = document.getElementById('charDisplay');
-            const charSm = document.getElementById('charSm');
-            const pinyinDisplay = document.getElementById('pinyinDisplay');
-            const transDisplay = document.getElementById('transDisplay');
-            const counter = document.getElementById('counter');
-            const progressFill = document.getElementById('progressFill');
-            const favoriteBtn = document.getElementById('favoriteBtn');
-            const favoritesListContainer = document.getElementById('favoritesListContainer');
-            const favList = document.getElementById('favList');
+    function startGame() {
+        if (!favorites.length) return;
+        gamePanel.classList.add('active');
+        gameScoreCount = 0;
+        nextGameWord();
+    }
 
-            function getCurrentWordList() {
-                return mode === 'all' ? uniqueWords : favorites;
-            }
+    function nextGameWord() {
+        if (!favorites.length) return;
+        const randomIndex = Math.floor(Math.random() * favorites.length);
+        const word = favorites[randomIndex];
+        const correctPinyin = word[1];
+        gameChar.textContent = word[0];
 
-            function getCurrentWord() {
-                const list = getCurrentWordList();
-                return list[currentIndex] || null;
-            }
+        const options = new Set();
+        options.add(correctPinyin);
+        while (options.size < 4) {
+            let fake = generateFakePinyin(correctPinyin);
+            if (!options.has(fake)) options.add(fake);
+        }
+        const shuffled = shuffle([...options]);
+        optionsContainer.innerHTML = shuffled.map(opt =>
+            `<button class="option-btn" data-pinyin="${opt}">${opt}</button>`
+        ).join('');
+        gameScore.textContent = `Правильных: ${gameScoreCount}`;
 
-            function charSizeClass(hanzi) {
-                const len = hanzi.length;
-                if (len <= 2) return '';
-                if (len <= 4) return 'multi';
-                return 'long';
-            }
-
-            function updateFavoriteButton() {
-                const word = getCurrentWord();
-                if (!word) return;
-                const isFav = favorites.some(w => w[0] === word[0]);
-                favoriteBtn.textContent = isFav ? '★' : '☆';
-                favoriteBtn.classList.toggle('active', isFav);
-            }
-
-            function renderCard() {
-                const word = getCurrentWord();
-                if (!word) {
-                    charDisplay.textContent = mode === 'favorites' ? '⭐' : '—';
-                    charSm.textContent = '';
-                    pinyinDisplay.textContent = 'Нет слов';
-                    transDisplay.textContent = mode === 'favorites' ? 'Добавьте слова в избранное' : 'Список пуст';
-                    counter.textContent = `0 / 0`;
-                    progressFill.style.width = '0%';
-                    favoriteBtn.style.display = 'none';
-                    isFlipped = false;
-                    cardInner.classList.remove('flipped');
-                    renderFavoritesList();
-                    return;
-                }
-                favoriteBtn.style.display = 'block';
-                const hanzi = word[0], pinyin = word[1], trans = word[2];
-                charDisplay.textContent = hanzi;
-                charDisplay.className = 'char ' + charSizeClass(hanzi);
-                charSm.textContent = hanzi;
-                pinyinDisplay.textContent = pinyin;
-                transDisplay.textContent = trans;
-                isFlipped = false;
-                cardInner.classList.remove('flipped');
-                const list = getCurrentWordList();
-                counter.textContent = `${currentIndex + 1} / ${list.length}`;
-                const progress = list.length ? ((currentIndex + 1) / list.length) * 100 : 0;
-                progressFill.style.width = progress + '%';
-                updateFavoriteButton();
-                renderFavoritesList();
-            }
-
-            function flipCard() {
-                if (!getCurrentWord()) return;
-                isFlipped = !isFlipped;
-                cardInner.classList.toggle('flipped', isFlipped);
-            }
-
-            function goToCard(index) {
-                const list = getCurrentWordList();
-                if (list.length === 0) {
-                    currentIndex = 0;
-                    renderCard();
-                    return;
-                }
-                if (index < 0) index = list.length - 1;
-                if (index >= list.length) index = 0;
-                currentIndex = index;
-                isFlipped = false;
-                renderCard();
-            }
-
-            function switchMode(newMode) {
-                if (mode === newMode) return;
-                mode = newMode;
-                currentIndex = 0;
-                document.querySelectorAll('.mode-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.mode === mode);
-                });
-                renderCard();
-                if (mode === 'favorites') {
-                    favoritesListContainer.classList.add('visible');
+        optionsContainer.querySelectorAll('.option-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                if (this.dataset.pinyin === correctPinyin) {
+                    this.classList.add('correct');
+                    gameScoreCount++;
+                    gameScore.textContent = `✅ Правильно! Счёт: ${gameScoreCount}`;
+                    setTimeout(nextGameWord, 800);
                 } else {
-                    favoritesListContainer.classList.remove('visible');
-                }
-            }
-
-            function toggleFavorite() {
-                const word = getCurrentWord();
-                if (!word) return;
-                const index = favorites.findIndex(w => w[0] === word[0]);
-                if (index === -1) {
-                    favorites.push([...word]);
-                } else {
-                    favorites.splice(index, 1);
-                }
-                localStorage.setItem('flashcardFavorites', JSON.stringify(favorites));
-                updateFavoriteButton();
-
-                if (mode === 'favorites') {
-                    if (favorites.length === 0) {
-                        currentIndex = 0;
-                        renderCard();
-                    } else {
-                        if (currentIndex >= favorites.length) {
-                            currentIndex = favorites.length - 1;
-                        }
-                        renderCard();
-                    }
-                } else {
-                    // в режиме all просто обновим список внизу, если он видим (не видим, но на всякий случай)
-                    renderFavoritesList();
-                }
-            }
-
-            function removeFavoriteByIndex(favIndex) {
-                if (favIndex < 0 || favIndex >= favorites.length) return;
-                favorites.splice(favIndex, 1);
-                localStorage.setItem('flashcardFavorites', JSON.stringify(favorites));
-                if (mode === 'favorites') {
-                    if (favorites.length === 0) {
-                        currentIndex = 0;
-                    } else if (currentIndex >= favorites.length) {
-                        currentIndex = favorites.length - 1;
-                    }
-                }
-                renderCard();
-            }
-
-            function renderFavoritesList() {
-                if (mode !== 'favorites') {
-                    favList.innerHTML = '';
-                    return;
-                }
-                if (favorites.length === 0) {
-                    favList.innerHTML = '<div class="empty-fav-msg">⭐ Нет сохранённых слов</div>';
-                    return;
-                }
-                favList.innerHTML = favorites.map((word, idx) => {
-                    const isCurrent = (idx === currentIndex);
-                    return `
-                        <div class="fav-item" data-fav-index="${idx}" style="${isCurrent ? 'background:#fce4d6; border-color:#d4a574;' : ''}">
-                            <span class="fav-char">${word[0]}</span>
-                            <span class="fav-pinyin">${word[1]}</span>
-                            <span class="fav-trans">${word[2]}</span>
-                            <span class="remove-fav" data-remove="${idx}">✕</span>
-                        </div>
-                    `;
-                }).join('');
-            }
-
-            // Обработчики
-            document.getElementById('cardStage').addEventListener('click', (e) => {
-                if (e.target.closest('.favorite-btn')) return;
-                flipCard();
-            });
-            favoriteBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                toggleFavorite();
-            });
-            document.getElementById('btnFlip').addEventListener('click', flipCard);
-            document.getElementById('btnPrev').addEventListener('click', () => goToCard(currentIndex - 1));
-            document.getElementById('btnNext').addEventListener('click', () => goToCard(currentIndex + 1));
-
-            document.querySelectorAll('.mode-btn').forEach(btn => {
-                btn.addEventListener('click', () => switchMode(btn.dataset.mode));
-            });
-
-            // Клики по списку избранного
-            favList.addEventListener('click', (e) => {
-                const removeBtn = e.target.closest('.remove-fav');
-                if (removeBtn) {
-                    const idx = parseInt(removeBtn.dataset.remove);
-                    removeFavoriteByIndex(idx);
-                    return;
-                }
-                const favItem = e.target.closest('.fav-item');
-                if (favItem) {
-                    const idx = parseInt(favItem.dataset.favIndex);
-                    if (idx !== currentIndex) {
-                        goToCard(idx);
-                    }
+                    this.classList.add('wrong');
+                    gameScore.textContent = `❌ Ошибка. Правильно: ${correctPinyin}`;
+                    setTimeout(nextGameWord, 1200);
                 }
             });
+        });
+    }
 
-            document.getElementById('gotoFirstBtn').addEventListener('click', () => {
-                if (favorites.length > 0) {
-                    goToCard(0);
-                }
-            });
+    function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
 
-            document.addEventListener('keydown', e => {
-                if (e.key === 'ArrowLeft') { e.preventDefault(); goToCard(currentIndex - 1); }
-                else if (e.key === 'ArrowRight') { e.preventDefault(); goToCard(currentIndex + 1); }
-                else if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); flipCard(); }
-            });
+    document.getElementById('toggleGameBtn').addEventListener('click', () => {
+        gamePanel.classList.toggle('active');
+        if (gamePanel.classList.contains('active')) startGame();
+    });
 
-            // Инициализация
+    document.getElementById('cardStage').addEventListener('click', e => { if (!e.target.closest('.favorite-btn')) flipCard(); });
+    favoriteBtn.addEventListener('click', e => { e.stopPropagation(); toggleFavorite(); });
+    document.getElementById('btnFlip').addEventListener('click', flipCard);
+    document.getElementById('btnPrev').addEventListener('click', () => goToCard(currentIndex-1));
+    document.getElementById('btnNext').addEventListener('click', () => goToCard(currentIndex+1));
+    document.getElementById('gotoFirstBtn').addEventListener('click', () => { if (favorites.length) goToCard(0); });
+    document.querySelectorAll('.mode-btn').forEach(b => b.addEventListener('click', () => switchMode(b.dataset.mode)));
+    favList.addEventListener('click', e => {
+        const rm = e.target.closest('.remove-fav');
+        if (rm) {
+            const idx = parseInt(rm.dataset.remove);
+            favorites.splice(idx, 1);
+            localStorage.setItem('flashcardFavorites', JSON.stringify(favorites));
             if (mode === 'favorites') {
-                favoritesListContainer.classList.add('visible');
+                if (!favorites.length) currentIndex = 0;
+                else if (currentIndex >= favorites.length) currentIndex = favorites.length-1;
             }
             renderCard();
-        })();
-    </script>
+            return;
+        }
+        const item = e.target.closest('.fav-item');
+        if (item) { const idx = parseInt(item.dataset.favIndex); goToCard(idx); }
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'ArrowLeft') { e.preventDefault(); goToCard(currentIndex-1); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); goToCard(currentIndex+1); }
+        else if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); flipCard(); }
+    });
+
+    if (mode === 'favorites') favoritesListContainer.classList.add('visible');
+    renderCard();
+})();
+</script>
 </body>
 </html>
