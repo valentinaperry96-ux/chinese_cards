@@ -2,475 +2,358 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Повторение слов — Личный список</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Тренажёр прописывания иероглифов</title>
     <style>
         :root {
             --bg: #f5f0eb;
             --card-bg: #fffef9;
             --text: #2c2416;
-            --text-light: #5c5347;
-            --accent: #c44536;
-            --accent-hover: #a6362a;
+            --accent: #2c7a47;
             --border: #d9cfc0;
             --shadow: 0 4px 20px rgba(0,0,0,0.08);
-            --shadow-hover: 0 8px 32px rgba(0,0,0,0.13);
-            --card-width: 340px;
-            --card-height: 440px;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: 'Segoe UI','Noto Sans','Noto Sans SC',system-ui,sans-serif;
             background: var(--bg);
             min-height: 100vh;
-            display:flex; flex-direction:column; align-items:center;
-            padding:20px 16px 40px;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px 16px 40px;
+            touch-action: manipulation;
         }
-        header { text-align:center; margin-bottom:6px; }
-        header h1 { font-size:1.7rem; font-weight:700; color:var(--text); }
-        .subtitle { font-size:0.85rem; color:var(--text-light); margin-top:2px; }
-        .mode-switch { display:flex; gap:10px; margin:12px 0 6px; }
-        .mode-btn {
-            background: #fff; border:1.5px solid var(--border); border-radius:24px;
-            padding:8px 20px; font-size:0.9rem; font-weight:600; cursor:pointer;
-            transition: all 0.2s; color: var(--text);
+        header { text-align: center; margin-bottom: 16px; }
+        header h1 { font-size: 1.8rem; color: var(--text); }
+        .subtitle { font-size: 0.9rem; color: #5c5347; }
+        .prompt {
+            background: var(--card-bg); border-radius: 20px; padding: 16px 24px;
+            box-shadow: var(--shadow); margin-bottom: 16px; text-align: center;
+            width: 100%; max-width: 360px;
         }
-        .mode-btn.active { background: var(--accent); color:#fff; border-color:var(--accent); }
-        .card-stage { perspective:1000px; margin:10px 0 18px; width:var(--card-width); height:var(--card-height); max-width:92vw; position: relative; }
-        .card-inner {
-            width:100%; height:100%; position:relative;
-            transition:transform 0.5s cubic-bezier(0.4,0,0.2,1);
-            transform-style:preserve-3d; cursor:pointer;
+        .prompt .pinyin { font-size: 1.8rem; font-weight: 600; color: #c44536; }
+        .prompt .translation { font-size: 1.2rem; color: #3d3226; margin-top: 4px; }
+        .canvas-container {
+            background: #fff; border-radius: 20px; box-shadow: var(--shadow);
+            width: 340px; height: 340px; max-width: 90vw; max-height: 90vw;
+            position: relative; margin-bottom: 12px;
         }
-        .card-inner.flipped { transform:rotateY(180deg); }
-        .card-face {
-            position:absolute; inset:0; border-radius:20px; background:var(--card-bg);
-            box-shadow:var(--shadow); backface-visibility:hidden; -webkit-backface-visibility:hidden;
-            display:flex; flex-direction:column; align-items:center; justify-content:center;
-            padding:30px 24px; border:1px solid rgba(0,0,0,0.06);
+        canvas {
+            display: block; width: 100%; height: 100%; border-radius: 20px;
+            background: #fffef5; cursor: crosshair;
         }
-        .card-face.back { transform:rotateY(180deg); background:#fdfaf3; }
-        .card-face.front .char { font-size:5.5rem; font-weight:700; color:#1a1a1a; line-height:1.1; }
-        .card-face.front .char.multi { font-size:3.2rem; }
-        .card-face.front .char.long { font-size:2.2rem; }
-        .card-face.front .pinyin-big { font-size:2.2rem; font-weight:600; color:#c44536; margin-bottom:12px; }
-        .card-face.front .trans-big { font-size:1.4rem; color:#3d3226; }
-        .card-face.front .tap-hint { position:absolute; bottom:18px; font-size:0.7rem; color:#c4b8a5; }
-        .card-face.front .favorite-btn {
-            position: absolute; top: 16px; right: 20px;
-            font-size: 2rem; cursor: pointer; color: #d4a574;
+        .answer-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            pointer-events: none;
+            font-size: 10rem; font-weight: 700; color: rgba(44,122,71,0.35);
+            border-radius: 20px; user-select: none;
         }
-        .card-face.front .favorite-btn.active { color: #c44536; }
-        .card-face.back .pinyin { font-size:2rem; font-weight:600; color:#c44536; margin-bottom:12px; }
-        .card-face.back .translation { font-size:1.2rem; color:#3d3226; text-align:center; }
-        .card-face.back .char-sm { font-size:1rem; color:#9a8b75; margin-bottom:16px; }
-        .nav-row { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:12px; }
+        .controls {
+            display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+            margin: 8px 0;
+        }
         .btn {
-            padding:11px 28px; border-radius:28px; border:1.5px solid var(--border);
-            background:#fff; font-size:1rem; font-weight:600; cursor:pointer;
+            padding: 10px 22px; border-radius: 28px; border: 1.5px solid var(--border);
+            background: #fff; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+            transition: 0.2s; color: var(--text); font-family: inherit;
         }
-        .btn.accent { background:var(--accent); color:#fff; border-color:var(--accent); }
-        .counter { font-size:0.9rem; color:var(--text-light); min-width:60px; text-align:center; }
-        .progress-bar { width: 260px; height: 6px; background: #e0d6c8; border-radius: 10px; margin: 10px 0; overflow: hidden; }
+        .btn:hover { background: #f7f3eb; }
+        .btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .btn.accent:hover { background: #1f5e36; }
+        .nav-row {
+            display: flex; align-items: center; gap: 16px; justify-content: center;
+            margin-top: 8px;
+        }
+        .counter { font-size: 0.9rem; color: #5c5347; min-width: 60px; text-align: center; }
+        .progress-bar {
+            width: 260px; max-width: 70%; height: 6px; background: #e0d6c8;
+            border-radius: 10px; margin: 8px 0; overflow: hidden;
+        }
         .progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+        @media (max-width: 500px) {
+            .canvas-container { width: 300px; height: 300px; }
+            .answer-overlay { font-size: 7rem; }
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>📝 Слова для повторения</h1>
-        <p class="subtitle">Пишите иероглиф, затем нажмите на карточку, чтобы проверить</p>
+        <h1>✍️ Прописи иероглифов</h1>
+        <p class="subtitle">Рисуйте иероглиф, затем покажите образец</p>
     </header>
 
-    <div class="mode-switch">
-        <button class="mode-btn" data-mode="reading">👀 Чтение</button>
-        <button class="mode-btn active" data-mode="writing">✍️ Письмо</button>
+    <div class="prompt" id="promptBox">
+        <div class="pinyin" id="pinyinHint"></div>
+        <div class="translation" id="transHint"></div>
     </div>
 
-    <div class="card-stage" id="cardStage">
-        <div class="card-inner" id="cardInner">
-            <div class="card-face front">
-                <span class="favorite-btn" id="favoriteBtn">☆</span>
-                <span class="char" id="mainDisplay"></span>
-                <span class="pinyin-big" id="pinyinBig"></span>
-                <span class="trans-big" id="transBig"></span>
-                <span class="tap-hint">👆 нажми</span>
-            </div>
-            <div class="card-face back">
-                <span class="char-sm" id="charSm"></span>
-                <span class="pinyin" id="pinyinDisplay"></span>
-                <span class="translation" id="transDisplay"></span>
-            </div>
-        </div>
+    <div class="canvas-container" id="canvasContainer">
+        <canvas id="drawCanvas"></canvas>
+        <div class="answer-overlay" id="answerOverlay" style="display:none;"></div>
     </div>
 
-    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
 
+    <div class="controls">
+        <button class="btn" id="clearBtn">🧽 Очистить</button>
+        <button class="btn" id="showAnswerBtn">👁 Показать ответ</button>
+        <button class="btn accent" id="nextBtn">Далее ▶</button>
+    </div>
     <div class="nav-row">
-        <button class="btn" id="btnPrev">◀ Назад</button>
-        <span class="counter" id="counter"></span>
-        <button class="btn" id="btnNext">Вперёд ▶</button>
-        <button class="btn accent" id="btnFlip">🔄 Перевернуть</button>
+        <button class="btn" id="prevBtn">◀ Назад</button>
+        <span class="counter" id="counter">1 / 1</span>
+        <button class="btn" id="skipBtn">Вперёд ▶</button>
     </div>
 
     <script>
         (function() {
-            // Ваш список слов
+            // Ваш список слов для повторения (без повторов)
             const words = [
-                ["不客气", "bú kè qi", "пожалуйста (ответ на спасибо)"],
-                ["留学生", "liú xué shēng", "иностранный студент"],
-                ["介绍", "jiè shào", "представлять, знакомить"],
-                ["一下儿", "yī xiàr", "немного, слегка"],
-                ["词典", "cí diǎn", "словарь"],
-                ["就是", "jiù shì", "именно, как раз"],
-                ["杂志", "zá zhì", "журнал"],
-                ["音乐", "yīn yuè", "музыка"],
-                ["请问", "qǐng wèn", "разрешите спросить"],
-                ["图书馆", "tú shū guǎn", "библиотека"],
-                ["对不起", "duì bu qǐ", "извините"],
-                ["没关系", "méi guān xi", "ничего страшного"],
-                ["教学", "jiào xué", "преподавание"],
-                ["楼", "lóu", "здание, этаж"],
-                ["宿舍", "sù shè", "общежитие"],
-                ["北边", "běi biān", "северная сторона"],
-                ["左边", "zuǒ biān", "левая сторона"],
-                ["右边", "yòu biān", "правая сторона"],
-                ["不用谢", "bú yòng xiè", "не за что"],
-                ["不用", "bú yòng", "не нужно"],
-                ["专业", "zhuān yè", "специальность"],
-                ["国际", "guó jì", "международный"],
-                ["研究生", "yán jiū shēng", "аспирант"],
-                ["现代", "xiàn dài", "современный"],
-                ["东边", "dōng biān", "восточная сторона"],
-                ["空儿", "kòngr", "свободное время"],
-                ["时候", "shí hou", "время, момент"],
-                ["欢迎", "huān yíng", "добро пожаловать"],
-                ["玩儿", "wánr", "играть, развлекаться"],
-                ["卫生间", "wèi shēng jiān", "туалет"],
-                ["教室", "jiào shì", "аудитория"],
-                ["旁边", "páng biān", "рядом"],
-                ["西边", "xī biān", "западная сторона"],
-                ["家庭", "jiā tíng", "семья"],
-                ["一般", "yī bān", "обычно"],
-                ["只", "zhǐ", "только"],
-                ["孩子", "hái zi", "ребёнок"],
-                ["条", "tiáo", "счётное слово"],
-                ["这样", "zhè yàng", "так"],
-                ["照片", "zhào piàn", "фотография"],
-                ["外公", "wài gōng", "дедушка (мать)"],
-                ["外婆", "wài pó", "бабушка (мать)"],
-                ["姥姥", "lǎo lao", "бабушка"],
-                ["老爷", "lǎo ye", "дедушка"],
-                ["大部分", "dà bù fen", "большая часть"],
-                ["讲座", "jiǎng zuò", "лекция"],
-                ["开始", "kāi shǐ", "начинать"],
-                ["现在", "xiàn zài", "сейчас"],
-                ["一会儿", "yī huìr", "немного погодя"],
-                ["时间", "shí jiān", "время"],
-                ["周末", "zhōu mò", "выходные"],
-                ["星期", "xīng qī", "неделя"],
-                ["分钟", "fēn zhōng", "минута"],
-                ["深夜", "shēn yè", "глубокая ночь"],
-                ["凌晨", "líng chén", "рассвет"],
-                ["星期天", "xīng qī tiān", "воскресенье"],
-                ["小时", "xiǎo shí", "час"],
-                ["怎么样", "zěn me yàng", "как"],
-                ["渡", "dù", "градус"],
-                ["晴天", "qíng tiān", "ясно"],
-                ["秋天", "qiū tiān", "осень"],
-                ["舒服", "shū fu", "комфортно"],
-                ["季节", "jì jié", "сезон"],
-                ["比较", "bǐ jiào", "сравнительно"],
-                ["差不多", "chà bu duō", "почти"],
-                ["喜欢", "xǐ huān", "нравиться"],
-                ["游泳", "yóu yǒng", "плавать"],
-                ["阴天", "yīn tiān", "пасмурно"],
-                ["多云", "duō yún", "облачно"],
-                ["下雨", "xià yǔ", "дождь"],
-                ["下雪", "xià xuě", "снег"],
-                ["外面", "wài miàn", "снаружи"],
-                ["刮大风", "guā dà fēng", "ветер"],
-                ["台风", "tái fēng", "тайфун"],
-                ["风雪", "fēng xuě", "метель"],
-                ["气温", "qì wēn", "температура"],
-                ["左右", "zuǒ yòu", "примерно"],
-                ["暖和", "nuǎn huo", "тепло"],
-                ["凉快", "liáng kuai", "прохладно"],
-                ["经常", "jīng cháng", "часто"],
-                ["低", "dī", "низкий"],
-                ["比较冷", "bǐ jiào lěng", "холодновато"],
-                ["难", "nán", "трудный"],
-                ["雨伞", "yǔ sǎn", "зонт"],
-                ["带雨伞", "dài yǔ sǎn", "взять зонт"],
-                ["预报", "yù bào", "прогноз"],
-                ["雷雨", "léi yǔ", "гроза"],
-                ["堆雪人", "duī xuě rén", "лепить снеговика"],
-                ["雪花", "xuě huā", "снежинка"],
-                ["叶", "yè", "лист"],
-                ["滑雪", "huá xuě", "лыжи"],
-                ["滑冰", "huá bīng", "коньки"],
-                ["雨鞋", "yǔ xié", "сапоги"],
-                ["雨衣", "yǔ yī", "дождевик"],
-                ["医生", "yī shēng", "врач"],
-                ["律师", "lǜ shī", "юрист"],
-                ["工程师", "gōng chéng shī", "инженер"],
-                ["记者", "jì zhě", "журналист"],
-                ["警察", "jǐng chá", "полиция"],
-                ["护士", "hù shi", "медсестра"],
-                ["厨师", "chú shī", "повар"],
-                ["秘书", "mì shū", "секретарь"],
-                ["经理", "jīng lǐ", "менеджер"],
-                ["理发师", "lǐ fà shī", "парикмахер"],
-                ["服务员", "fú wù yuán", "официант"],
-                ["售货员", "shòu huò yuán", "продавец"],
-                ["师傅", "shī fu", "мастер"],
-                ["演员", "yǎn yuán", "актёр"],
-                ["运动员", "yùn dòng yuán", "спортсмен"],
-                ["俄罗斯", "é luó sī", "Россия"],
-                ["韩国", "hán guó", "Южная Корея"],
-                ["加拿大", "jiā ná dà", "Канада"],
-                ["澳大利亚", "ào dà lì yà", "Австралия"],
-                ["新西兰", "xīn xī lán", "Новая Зеландия"],
-                ["首都", "shǒu dū", "столица"],
-                ["北京", "běi jīng", "Пекин"],
-                ["莫斯科", "mò sī kē", "Москва"],
-                ["圣彼得堡", "shèng bǐ dé bǎo", "Санкт-Петербург"],
-                ["香港", "xiāng gǎng", "Гонконг"],
-                ["奥伦堡", "ào lún bǎo", "Оренбург"],
-                ["伦敦", "lún dūn", "Лондон"],
-                ["可是", "kě shì", "но"],
-                ["没问题", "méi wèn tí", "без проблем"],
-                ["钥匙", "yào shi", "ключ"],
-                ["车棚", "chē péng", "навес"],
-                ["后边", "hòu biān", "сзади"],
-                ["电影院", "diàn yǐng yuàn", "кинотеатр"],
-                ["电影", "diàn yǐng", "фильм"],
-                ["听说", "tīng shuō", "слышать"],
-                ["当然", "dāng rán", "конечно"],
-                ["啊", "a", "междометие"],
-                ["不过", "bú guò", "однако"],
-                ["怎么", "zěn me", "как"],
-                ["走路", "zǒu lù", "пешком"],
-                ["公共汽车", "gōng gòng qì chē", "автобус"],
-                ["到", "dào", "добираться"],
-                ["骑", "qí", "ехать верхом"],
-                ["快", "kuài", "быстро"],
-                ["就", "jiù", "сразу"],
-                ["东南", "dōng nán", "юго-восток"],
-                ["出租车", "chū zū chē", "такси"],
-                ["地铁", "dì tiě", "метро"],
-                ["飞机", "fēi jī", "самолёт"],
-                ["船", "chuán", "корабль"],
-                ["火车站", "huǒ chē zhàn", "вокзал"],
-                ["喂", "wèi", "алло"],
-                ["做", "zuò", "делать"],
-                ["作业", "zuò yè", "домашнее задание"],
-                ["从...到", "cóng... dào", "от... до"],
-                ["节", "jié", "урок"],
-                ["听写", "tīng xiě", "диктант"],
-                ["所以", "suǒ yǐ", "поэтому"],
-                ["酒吧", "jiǔ bā", "бар"],
-                ["自己", "zì jǐ", "сам"],
-                ["正在", "zhèng zài", "прямо сейчас"],
-                ["唱歌", "chàng gē", "петь"],
-                ["借书", "jiè shū", "взять книгу"],
-                ["先...然后", "xiān... rán hòu", "сначала... потом"],
-                ["换钱", "huàn qián", "обмен валюты"],
-                ["咱们", "zán men", "мы"],
-                ["购物", "gòu wù", "шопинг"],
-                ["还可以", "hái kě yǐ", "неплохо"],
-                ["质量", "zhì liàng", "качество"],
-                ["不错", "bú cuò", "неплохой"],
-                ["餐", "cān", "еда"],
-                ["厨房", "chú fáng", "кухня"],
-                ["一瓶啤酒", "yī píng pí jiǔ", "бутылка пива"],
-                ["饭馆", "fàn guǎn", "ресторан"],
-                ["食堂", "shí táng", "столовая"],
-                ["新鲜", "xīn xiān", "свежий"],
-                ["角", "jiǎo", "цзяо"],
-                ["人民币", "rén mín bì", "жэньминьби"],
-                ["一共", "yī gòng", "всего"],
-                ["矮", "ǎi", "низкий"],
-                ["漂亮", "piào liang", "красивый"],
-                ["帅", "shuài", "красивый (муж)"],
-                ["酷", "kù", "крутой"],
-                ["年轻", "nián qīng", "молодой"],
-                ["可爱", "kě ài", "милый"],
-                ["肥", "féi", "толстый"],
-                ["瘦", "shòu", "худой"],
-                ["脏", "zāng", "грязный"],
-                ["旧", "jiù", "старый"],
-                ["新", "xīn", "новый"],
-                ["帅哥", "shuài gē", "красавец"],
-                ["美女", "měi nǚ", "красавица"],
-                ["年轻人", "nián qīng rén", "молодёжь"],
-                ["真的", "zhēn de", "настоящий"],
-                ["觉得", "jué de", "чувствовать"],
-                ["打篮球", "dǎ lán qiú", "баскетбол"],
-                ["电视剧", "diàn shì jù", "сериал"],
-                ["但是", "dàn shì", "но"],
-                ["派对", "pài duì", "вечеринка"],
-                ["见面", "jiàn miàn", "встреча"],
-                ["跟", "gēn", "с"],
-                ["累了", "lèi le", "устал"],
-                ["学院", "xué yuàn", "институт"],
-                ["空调", "kōng tiáo", "кондиционер"],
-                ["店员", "diàn yuán", "продавец"],
-                ["洗澡", "xǐ zǎo", "принимать ванну"],
-                ["打扫", "dǎ sǎo", "убирать"],
-                ["丢", "diū", "терять"],
-                ["用", "yòng", "использовать"],
-                ["跳舞", "tiào wǔ", "танцевать"],
-                ["弹钢琴", "tán gāng qín", "пианино"],
-                ["弹吉他", "tán jí tā", "гитара"],
-                ["玩儿电脑游戏", "wánr diàn nǎo yóu xì", "комп. игры"],
-                ["踢足球", "tī zú qiú", "футбол"],
-                ["足球", "zú qiú", "футбол"],
-                ["打球", "dǎ qiú", "играть в мяч"],
-                ["爱好", "ài hào", "хобби"],
-                ["旅游", "lǚ yóu", "путешествовать"],
-                ["休息", "xiū xi", "отдых"],
-                ["出去", "chū qù", "выйти"],
-                ["卡拉OK", "kǎ lā OK", "караоке"],
-                ["羽绒服", "yǔ róng fú", "пуховик"],
-                ["俩", "liǎ", "двое"],
-                ["别的", "bié de", "другой"],
-                ["有一点儿", "yǒu yī diǎnr", "немного"],
-                ["旧书", "jiù shū", "старая книга"],
-                ["怎么办", "zěn me bàn", "что делать"],
-                ["挺", "tǐng", "очень"],
-                ["累", "lèi", "усталый"],
-                ["市场", "shì chǎng", "рынок"],
-                ["到过", "dào guò", "бывал"],
-                ["邮局", "yóu jú", "почта"],
-                ["服装市场", "fú zhuāng shì chǎng", "рынок одежды"],
-                ["超市", "chāo shì", "супермаркет"],
-                ["洗手间", "xǐ shǒu jiān", "туалет"],
-                ["医院", "yī yuàn", "больница"],
-                ["公园", "gōng yuán", "парк"],
-                ["因为", "yīn wèi", "потому что"],
-                ["而且", "ér qiě", "к тому же"],
-                ["或者", "huò zhě", "или"],
-                ["还是", "hái shì", "или"],
-                ["如果", "rú guǒ", "если"],
-                ["虽然", "suī rán", "хотя"],
-                ["一边...一边", "yī biān... yī biān", "одновременно"],
-                ["才", "cái", "только что"],
-                ["南边", "nán biān", "юг"],
-                ["前边", "qián biān", "перед"],
-                ["里边", "lǐ biān", "внутри"],
-                ["外边", "wài biān", "снаружи"],
-                ["上边", "shàng biān", "наверху"],
-                ["下边", "xià biān", "внизу"],
-                ["电话", "diàn huà", "телефон"],
-                ["号码", "hào mǎ", "номер"],
-                ["手机", "shǒu jī", "мобильный"],
-                ["短信", "duǎn xìn", "сообщение"],
-                ["眼睛", "yǎn jing", "глаза"]
+                ["不客气","bú kè qi","пожалуйста"],["留学生","liú xué shēng","иностранный студент"],
+                ["介绍","jiè shào","представлять"],["一下儿","yī xiàr","немного"],
+                ["词典","cí diǎn","словарь"],["就是","jiù shì","именно"],
+                ["杂志","zá zhì","журнал"],["音乐","yīn yuè","музыка"],
+                ["请问","qǐng wèn","разрешите спросить"],["图书馆","tú shū guǎn","библиотека"],
+                ["对不起","duì bu qǐ","извините"],["没关系","méi guān xi","ничего страшного"],
+                ["教学","jiào xué","преподавание"],["楼","lóu","здание"],
+                ["宿舍","sù shè","общежитие"],["北边","běi biān","север"],
+                ["左边","zuǒ biān","лево"],["右边","yòu biān","право"],
+                ["不用谢","bú yòng xiè","не за что"],["不用","bú yòng","не нужно"],
+                ["专业","zhuān yè","специальность"],["国际","guó jì","международный"],
+                ["研究生","yán jiū shēng","аспирант"],["现代","xiàn dài","современный"],
+                ["东边","dōng biān","восток"],["空儿","kòngr","свободное время"],
+                ["时候","shí hou","время"],["欢迎","huān yíng","добро пожаловать"],
+                ["玩儿","wánr","играть"],["卫生间","wèi shēng jiān","туалет"],
+                ["教室","jiào shì","аудитория"],["旁边","páng biān","рядом"],
+                ["西边","xī biān","запад"],["家庭","jiā tíng","семья"],
+                ["一般","yī bān","обычно"],["只","zhǐ","только"],
+                ["孩子","hái zi","ребёнок"],["条","tiáo","сч. слово"],
+                ["这样","zhè yàng","так"],["照片","zhào piàn","фото"],
+                ["外公","wài gōng","дедушка (мать)"],["外婆","wài pó","бабушка (мать)"],
+                ["姥姥","lǎo lao","бабушка"],["老爷","lǎo ye","дедушка"],
+                ["大部分","dà bù fen","большая часть"],["讲座","jiǎng zuò","лекция"],
+                ["开始","kāi shǐ","начинать"],["现在","xiàn zài","сейчас"],
+                ["一会儿","yī huìr","немного погодя"],["时间","shí jiān","время"],
+                ["周末","zhōu mò","выходные"],["星期","xīng qī","неделя"],
+                ["分钟","fēn zhōng","минута"],["深夜","shēn yè","глубокая ночь"],
+                ["凌晨","líng chén","рассвет"],["星期天","xīng qī tiān","воскресенье"],
+                ["小时","xiǎo shí","час"],["怎么样","zěn me yàng","как"],
+                ["渡","dù","градус"],["晴天","qíng tiān","ясно"],
+                ["秋天","qiū tiān","осень"],["舒服","shū fu","комфортно"],
+                ["季节","jì jié","сезон"],["比较","bǐ jiào","сравнительно"],
+                ["差不多","chà bu duō","почти"],["喜欢","xǐ huān","нравиться"],
+                ["游泳","yóu yǒng","плавать"],["阴天","yīn tiān","пасмурно"],
+                ["多云","duō yún","облачно"],["下雨","xià yǔ","дождь"],
+                ["下雪","xià xuě","снег"],["外面","wài miàn","снаружи"],
+                ["刮大风","guā dà fēng","ветер"],["台风","tái fēng","тайфун"],
+                ["风雪","fēng xuě","метель"],["气温","qì wēn","температура"],
+                ["左右","zuǒ yòu","примерно"],["暖和","nuǎn huo","тепло"],
+                ["凉快","liáng kuai","прохладно"],["经常","jīng cháng","часто"],
+                ["低","dī","низкий"],["比较冷","bǐ jiào lěng","холодновато"],
+                ["难","nán","трудный"],["雨伞","yǔ sǎn","зонт"],
+                ["带雨伞","dài yǔ sǎn","взять зонт"],["预报","yù bào","прогноз"],
+                ["雷雨","léi yǔ","гроза"],["堆雪人","duī xuě rén","лепить снеговика"],
+                ["雪花","xuě huā","снежинка"],["叶","yè","лист"],
+                ["滑雪","huá xuě","лыжи"],["滑冰","huá bīng","коньки"],
+                ["雨鞋","yǔ xié","сапоги"],["雨衣","yǔ yī","дождевик"],
+                ["医生","yī shēng","врач"],["律师","lǜ shī","юрист"],
+                ["工程师","gōng chéng shī","инженер"],["记者","jì zhě","журналист"],
+                ["警察","jǐng chá","полиция"],["护士","hù shi","медсестра"],
+                ["厨师","chú shī","повар"],["秘书","mì shū","секретарь"],
+                ["经理","jīng lǐ","менеджер"],["理发师","lǐ fà shī","парикмахер"],
+                ["服务员","fú wù yuán","официант"],["售货员","shòu huò yuán","продавец"],
+                ["师傅","shī fu","мастер"],["演员","yǎn yuán","актёр"],
+                ["运动员","yùn dòng yuán","спортсмен"],["俄罗斯","é luó sī","Россия"],
+                ["韩国","hán guó","Корея"],["加拿大","jiā ná dà","Канада"],
+                ["澳大利亚","ào dà lì yà","Австралия"],["新西兰","xīn xī lán","Новая Зеландия"],
+                ["首都","shǒu dū","столица"],["北京","běi jīng","Пекин"],
+                ["莫斯科","mò sī kē","Москва"],["圣彼得堡","shèng bǐ dé bǎo","Санкт-Петербург"],
+                ["香港","xiāng gǎng","Гонконг"],["奥伦堡","ào lún bǎo","Оренбург"],
+                ["伦敦","lún dūn","Лондон"],["可是","kě shì","но"],
+                ["没问题","méi wèn tí","без проблем"],["钥匙","yào shi","ключ"],
+                ["车棚","chē péng","навес"],["后边","hòu biān","сзади"],
+                ["电影院","diàn yǐng yuàn","кинотеатр"],["电影","diàn yǐng","фильм"],
+                ["听说","tīng shuō","слышать"],["当然","dāng rán","конечно"],
+                ["啊","a","междометие"],["不过","bú guò","однако"],
+                ["怎么","zěn me","как"],["走路","zǒu lù","пешком"],
+                ["公共汽车","gōng gòng qì chē","автобус"],["到","dào","добираться"],
+                ["骑","qí","ехать верхом"],["快","kuài","быстро"],
+                ["就","jiù","сразу"],["东南","dōng nán","юго-восток"],
+                ["出租车","chū zū chē","такси"],["地铁","dì tiě","метро"],
+                ["飞机","fēi jī","самолёт"],["船","chuán","корабль"],
+                ["火车站","huǒ chē zhàn","вокзал"],["喂","wèi","алло"],
+                ["做","zuò","делать"],["作业","zuò yè","домашнее задание"],
+                ["从...到","cóng... dào","от... до"],["节","jié","урок"],
+                ["听写","tīng xiě","диктант"],["所以","suǒ yǐ","поэтому"],
+                ["酒吧","jiǔ bā","бар"],["自己","zì jǐ","сам"],
+                ["正在","zhèng zài","прямо сейчас"],["唱歌","chàng gē","петь"],
+                ["借书","jiè shū","взять книгу"],["先...然后","xiān... rán hòu","сначала... потом"],
+                ["换钱","huàn qián","обмен валюты"],["咱们","zán men","мы"],
+                ["购物","gòu wù","шопинг"],["还可以","hái kě yǐ","неплохо"],
+                ["质量","zhì liàng","качество"],["不错","bú cuò","неплохой"],
+                ["餐","cān","еда"],["厨房","chú fáng","кухня"],
+                ["一瓶啤酒","yī píng pí jiǔ","бутылка пива"],["饭馆","fàn guǎn","ресторан"],
+                ["食堂","shí táng","столовая"],["新鲜","xīn xiān","свежий"],
+                ["角","jiǎo","цзяо"],["人民币","rén mín bì","жэньминьби"],
+                ["一共","yī gòng","всего"],["矮","ǎi","низкий"],
+                ["漂亮","piào liang","красивый"],["帅","shuài","красивый (муж)"],
+                ["酷","kù","крутой"],["年轻","nián qīng","молодой"],
+                ["可爱","kě ài","милый"],["肥","féi","толстый"],
+                ["瘦","shòu","худой"],["脏","zāng","грязный"],
+                ["旧","jiù","старый"],["新","xīn","новый"],
+                ["帅哥","shuài gē","красавец"],["美女","měi nǚ","красавица"],
+                ["年轻人","nián qīng rén","молодёжь"],["真的","zhēn de","настоящий"],
+                ["觉得","jué de","чувствовать"],["打篮球","dǎ lán qiú","баскетбол"],
+                ["电视剧","diàn shì jù","сериал"],["但是","dàn shì","но"],
+                ["派对","pài duì","вечеринка"],["见面","jiàn miàn","встреча"],
+                ["跟","gēn","с"],["累了","lèi le","устал"],
+                ["学院","xué yuàn","институт"],["空调","kōng tiáo","кондиционер"],
+                ["店员","diàn yuán","продавец"],["洗澡","xǐ zǎo","принимать ванну"],
+                ["打扫","dǎ sǎo","убирать"],["丢","diū","терять"],
+                ["用","yòng","использовать"],["跳舞","tiào wǔ","танцевать"],
+                ["弹钢琴","tán gāng qín","пианино"],["弹吉他","tán jí tā","гитара"],
+                ["玩儿电脑游戏","wánr diàn nǎo yóu xì","комп. игры"],["踢足球","tī zú qiú","футбол"],
+                ["足球","zú qiú","футбол"],["打球","dǎ qiú","играть в мяч"],
+                ["爱好","ài hào","хобби"],["旅游","lǚ yóu","путешествовать"],
+                ["休息","xiū xi","отдых"],["出去","chū qù","выйти"],
+                ["卡拉OK","kǎ lā OK","караоке"],["羽绒服","yǔ róng fú","пуховик"],
+                ["俩","liǎ","двое"],["别的","bié de","другой"],
+                ["有一点儿","yǒu yī diǎnr","немного"],["旧书","jiù shū","старая книга"],
+                ["怎么办","zěn me bàn","что делать"],["挺","tǐng","очень"],
+                ["累","lèi","усталый"],["市场","shì chǎng","рынок"],
+                ["到过","dào guò","бывал"],["邮局","yóu jú","почта"],
+                ["服装市场","fú zhuāng shì chǎng","рынок одежды"],["超市","chāo shì","супермаркет"],
+                ["洗手间","xǐ shǒu jiān","туалет"],["医院","yī yuàn","больница"],
+                ["公园","gōng yuán","парк"],["因为","yīn wèi","потому что"],
+                ["而且","ér qiě","к тому же"],["或者","huò zhě","или"],
+                ["还是","hái shì","или"],["如果","rú guǒ","если"],
+                ["虽然","suī rán","хотя"],["一边...一边","yī biān... yī biān","одновременно"],
+                ["才","cái","только что"],["南边","nán biān","юг"],
+                ["前边","qián biān","перед"],["里边","lǐ biān","внутри"],
+                ["外边","wài biān","снаружи"],["上边","shàng biān","наверху"],
+                ["下边","xià biān","внизу"],["电话","diàn huà","телефон"],
+                ["号码","hào mǎ","номер"],["手机","shǒu jī","мобильный"],
+                ["短信","duǎn xìn","сообщение"],["眼睛","yǎn jing","глаза"]
             ];
 
             let currentIndex = 0;
-            let isFlipped = false;
-            let mode = 'writing'; // по умолчанию письмо
             const total = words.length;
 
-            const cardInner = document.getElementById('cardInner');
-            const mainDisplay = document.getElementById('mainDisplay');
-            const pinyinBig = document.getElementById('pinyinBig');
-            const transBig = document.getElementById('transBig');
-            const charSm = document.getElementById('charSm');
-            const pinyinDisplay = document.getElementById('pinyinDisplay');
-            const transDisplay = document.getElementById('transDisplay');
+            const canvas = document.getElementById('drawCanvas');
+            const ctx = canvas.getContext('2d');
+            const container = document.getElementById('canvasContainer');
+            const answerOverlay = document.getElementById('answerOverlay');
+            const pinyinHint = document.getElementById('pinyinHint');
+            const transHint = document.getElementById('transHint');
             const counter = document.getElementById('counter');
             const progressFill = document.getElementById('progressFill');
-            const favoriteBtn = document.getElementById('favoriteBtn');
 
-            // Избранное (сохраняется в localStorage)
-            let favorites = JSON.parse(localStorage.getItem('repeatFavorites') || '[]');
+            let drawing = false;
+            let lastX, lastY;
 
-            function updateFavoriteButton() {
-                const word = words[currentIndex];
-                const isFav = favorites.some(w => w[0] === word[0]);
-                favoriteBtn.textContent = isFav ? '★' : '☆';
-                favoriteBtn.classList.toggle('active', isFav);
+            function resizeCanvas() {
+                const rect = container.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                clearCanvas();
+                answerOverlay.style.fontSize = (rect.width * 0.35) + 'px';
             }
 
-            function renderCard() {
-                const word = words[currentIndex];
-                if (!word) return;
-                const [hanzi, pinyin, trans] = word;
-
-                charSm.textContent = hanzi;
-                pinyinDisplay.textContent = pinyin;
-                transDisplay.textContent = trans;
-
-                if (mode === 'reading') {
-                    mainDisplay.style.display = 'block';
-                    pinyinBig.style.display = 'none';
-                    transBig.style.display = 'none';
-                    mainDisplay.textContent = hanzi;
-                    mainDisplay.className = 'char ' + (hanzi.length <= 2 ? '' : (hanzi.length <= 4 ? 'multi' : 'long'));
-                } else {
-                    mainDisplay.style.display = 'none';
-                    pinyinBig.style.display = 'block';
-                    transBig.style.display = 'block';
-                    pinyinBig.textContent = pinyin;
-                    transBig.textContent = trans;
-                }
-
-                isFlipped = false;
-                cardInner.classList.remove('flipped');
-                counter.textContent = `${currentIndex+1} / ${total}`;
-                progressFill.style.width = ((currentIndex+1)/total*100) + '%';
-                updateFavoriteButton();
+            function clearCanvas() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#fffef5';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
-            function flipCard() {
-                isFlipped = !isFlipped;
-                cardInner.classList.toggle('flipped', isFlipped);
-            }
-
-            function goToCard(index) {
-                if (index < 0) index = total-1;
+            function loadWord(index) {
+                if (index < 0) index = total - 1;
                 if (index >= total) index = 0;
                 currentIndex = index;
-                renderCard();
+                const [hanzi, pinyin, trans] = words[currentIndex];
+                pinyinHint.textContent = pinyin;
+                transHint.textContent = trans;
+                answerOverlay.style.display = 'none';
+                answerOverlay.textContent = hanzi;
+                clearCanvas();
+                counter.textContent = `${currentIndex+1} / ${total}`;
+                progressFill.style.width = ((currentIndex+1)/total*100) + '%';
             }
 
-            function switchMode(newMode) {
-                mode = newMode;
-                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-                document.querySelector(`.mode-btn[data-mode="${mode}"]`).classList.add('active');
-                renderCard();
+            function startDrawing(e) {
+                drawing = true;
+                const pos = getCanvasPos(e);
+                lastX = pos.x;
+                lastY = pos.y;
             }
 
-            favoriteBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const word = words[currentIndex];
-                const idx = favorites.findIndex(w => w[0] === word[0]);
-                if (idx === -1) favorites.push([...word]);
-                else favorites.splice(idx,1);
-                localStorage.setItem('repeatFavorites', JSON.stringify(favorites));
-                updateFavoriteButton();
+            function draw(e) {
+                if (!drawing) return;
+                e.preventDefault();
+                const pos = getCanvasPos(e);
+                ctx.lineWidth = 12;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.strokeStyle = '#2c2416';
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+                lastX = pos.x;
+                lastY = pos.y;
+            }
+
+            function stopDrawing() { drawing = false; }
+
+            function getCanvasPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                let clientX, clientY;
+                if (e.touches) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                return {
+                    x: (clientX - rect.left) * scaleX,
+                    y: (clientY - rect.top) * scaleY
+                };
+            }
+
+            // Mouse Events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+
+            // Touch Events
+            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e); });
+            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+            canvas.addEventListener('touchend', stopDrawing);
+
+            window.addEventListener('resize', resizeCanvas);
+
+            document.getElementById('clearBtn').addEventListener('click', clearCanvas);
+            document.getElementById('showAnswerBtn').addEventListener('click', () => {
+                answerOverlay.style.display = 'flex';
+            });
+            document.getElementById('nextBtn').addEventListener('click', () => {
+                loadWord(currentIndex + 1);
+            });
+            document.getElementById('prevBtn').addEventListener('click', () => {
+                loadWord(currentIndex - 1);
+            });
+            document.getElementById('skipBtn').addEventListener('click', () => {
+                loadWord(currentIndex + 1);
             });
 
-            document.getElementById('cardStage').addEventListener('click', flipCard);
-            document.getElementById('btnFlip').addEventListener('click', flipCard);
-            document.getElementById('btnPrev').addEventListener('click', () => goToCard(currentIndex-1));
-            document.getElementById('btnNext').addEventListener('click', () => goToCard(currentIndex+1));
-
-            document.querySelectorAll('.mode-btn').forEach(btn => {
-                btn.addEventListener('click', () => switchMode(btn.dataset.mode));
-            });
-
-            document.addEventListener('keydown', e => {
-                if (e.key === 'ArrowLeft') { e.preventDefault(); goToCard(currentIndex-1); }
-                else if (e.key === 'ArrowRight') { e.preventDefault(); goToCard(currentIndex+1); }
-                else if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); flipCard(); }
-            });
-
-            renderCard();
+            // Инициализация
+            resizeCanvas();
+            loadWord(0);
         })();
     </script>
 </body>
